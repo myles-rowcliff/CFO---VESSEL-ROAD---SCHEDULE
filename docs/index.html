@@ -84,6 +84,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <button type="button" class="cfo-tab" role="tab" data-tab="sva" aria-selected="false">Scheduled vs actual</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="motion" aria-selected="false">Time &amp; motion</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="site" aria-selected="false">Site fuel</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="amigo" aria-selected="false">Amigo 1</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="summary" aria-selected="false">Summary</button>
 </nav>
 
@@ -135,7 +136,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <div class="cfo-tw" style="margin-top:12px"><table class="cfo-table"><thead><tr><th>Date</th><th class="num">Scheduled stock (L)</th><th class="num">Actual stock (L)</th><th class="num">Variance (L)</th><th class="num">Actual days of use</th></tr></thead><tbody data-draw="siteSvaRows"></tbody></table></div>
 </section>
 
-<section id="amigo" class="cfo-card" hidden>
+<section id="amigo" class="cfo-card cfo-page" role="tabpanel" hidden>
 <h2>Amigo 1 stock and trucking</h2>
 <p class="cfo-sub">Daily closing stock in the Amigo 1 silo vessel and litres sent to Kiunga by truck (7 trucks and 4 pre-filled tank-tainers on 19 Nov, already loaded; 12 trucks filled from Amigo 1 on the evening of 19 Nov leave with the 20 Nov convoys; from 20 Nov 14 trucks × 40,000 L = 560,000 L a day in three convoys at 5, 6 and 7 AM; a truck that can't be fuelled waits at Aiambak for the next convoy). Point at a day to see what was filled from Amigo 1 as well. CFO that won't fit waits aboard the Fly vessels.</p>
 <div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Closing stock</span><span><i class="cfo-sw" data-swatch="1"></i>Trucks sent to Kiunga</span><span><i class="cfo-swl"></i>Amigo 1 capacity</span></div>
