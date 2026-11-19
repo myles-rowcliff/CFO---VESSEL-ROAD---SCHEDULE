@@ -1,0 +1,128 @@
+{
+ "start": "2026-11-18T00:00:00",
+ "now": "2026-11-18T13:00:00",
+ "weeks": 8,
+ "t_out": 4.0,
+ "t_back": 4.0,
+ "load_pom": 1,
+ "dis_aia": 1,
+ "t_ak": 2.5,
+ "t_ka": 2.5,
+ "load_aia": 0.5,
+ "dis_k": 0.5,
+ "amigo_cap": 2100000,
+ "amigo_open": 1650000,
+ "amigo_low": 0,
+ "amigo_target": 960000,
+ "truck_rate": 480000,
+ "truck_hours": 7,
+ "trucks_restart": "2026-11-19T06:00:00",
+ "site_open": 1239563,
+ "site_use": 350000,
+ "buffer_days": 1,
+ "window": 1,
+ "fly": [
+  {
+   "name": "Fly Challenger",
+   "cap": 1500000,
+   "now": 1200000,
+   "event": "Standby at Aiambak",
+   "date": "2026-11-18T13:00:00",
+   "hold": 0
+  },
+  {
+   "name": "Fly Resilience",
+   "cap": 1500000,
+   "now": 1200000,
+   "event": "Standby at Aiambak",
+   "date": "2026-11-18T14:00:00",
+   "hold": 0
+  },
+  {
+   "name": "Fly Prosperity",
+   "cap": 1500000,
+   "now": 0,
+   "event": "Departed Aiambak",
+   "date": "2026-11-17T12:00:00",
+   "hold": 1
+  },
+  {
+   "name": "Fly Warrior",
+   "cap": 1000000,
+   "now": 1000000,
+   "event": "Loading at POM",
+   "date": "2026-11-19T12:00:00",
+   "hold": 0
+  },
+  {
+   "name": "Diamond",
+   "cap": 950000,
+   "now": 950000,
+   "event": "Loading at POM",
+   "date": "2026-11-18T12:00:00",
+   "hold": 0,
+   "dis_aia": 0.5
+  }
+ ],
+ "river": [
+  {
+   "name": "Elimbari",
+   "cap": 1000000,
+   "event": "ETA Kiunga",
+   "date": "2026-11-20T07:00:00"
+  }
+ ],
+ "wonder": {
+  "cap": 700000,
+  "start": "2026-12-05T12:00:00",
+  "freight_pom": 1,
+  "cfo": 1.0,
+  "t_out": 3,
+  "freight_aia": 1,
+  "t_back": 3
+ },
+ "truck_steps": [
+  [
+   "2026-11-19T00:00:00",
+   7
+  ],
+  [
+   "2026-11-20T00:00:00",
+   14
+  ]
+ ],
+ "truck_size": 40000,
+ "convoy_hour": 6,
+ "site_measured": "2026-11-18T00:00:00",
+ "roster": [],
+ "preloaded": [
+  [
+   "2026-11-19T06:00:00",
+   280000
+  ]
+ ],
+ "convoys": [
+  [
+   5,
+   6
+  ],
+  [
+   6,
+   4
+  ],
+  [
+   7,
+   4
+  ]
+ ],
+ "hold_convoys": false,
+ "truck_turnaround_h": 16,
+ "truck_mode": true,
+ "extra_loads": [
+  [
+   "2026-11-19T06:00:00",
+   84000,
+   true
+  ]
+ ]
+}

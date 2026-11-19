@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CFO Vessel Schedule – POM · Aiambak · Kiunga</title>
+<link rel="icon" href="logo.png">
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap");
+:root { --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 20px; --cds-radius: 8px; --cds-pad-lg: 20px;
+  --color-bg: #ffffff; --color-page: #f6f6f4; --color-panel: #ffffff; --color-fg: #1d1d1d; --color-fg-muted: #666; --color-border-line: #e4e4e0;
+  --cds-text-secondary: #666; --cds-font-size-caption: 13px; --cds-font-size-body: 14px; --cds-font-weight-medium: 600;
+  --cds-surface-popover: #fff; --cds-border: #ddd; --cds-shadow-popover: 0 4px 16px rgba(0,0,0,.12);
+  --cds-chart-grid: #ececec; --cds-chart-axis: #bbb; --cds-chart-reference: #5c5c5c; --cds-chart-muted: #cfcfcf; --cds-chart-status-critical: #c62828; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--color-page); color: var(--color-fg); }
+.page { max-width: 1240px; margin: 0 auto; padding: 24px; }
+.cfo { --oktl-accent: #d2560b; --oktl-sans: "Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; --oktl-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; display: flex; flex-direction: column; gap: var(--cds-gap-lg); font-family: var(--oktl-sans); }
+.cfo-band { background: #d2560b; color: #fff; border-radius: 8px; padding: 28px 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 20px 28px; }
+.cfo-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding-right: 28px; border-right: 1px solid rgba(255,255,255,.75); }
+.cfo-brand img { width: 285px; max-width: 100%; height: auto; display: block; }
+.cfo-date { font: 400 15px/1 var(--oktl-mono); color: #fff; }
+.cfo-eyebrow { font: 600 15px/1 var(--oktl-mono); letter-spacing: .14em; text-transform: uppercase; color: #fff; margin: 0 0 12px; }
+.cfo h1 { font-family: "Archivo", var(--oktl-sans); font-weight: 800; font-size: clamp(30px, 4.2vw, 50px); line-height: 1.05; letter-spacing: -.035em; margin: 0; color: #fff; }
+.cfo-upd { font: 400 13px/1.3 var(--oktl-mono); color: #fff; opacity: .9; margin-top: 12px; }
+@media (max-width: 560px) { .cfo-band { padding: 20px; } .cfo-brand { border-right: 0; padding-right: 0; } .cfo-brand img { width: 200px; } .page { padding: 12px; } }
+.cfo h2 { font-size: 16px; font-weight: 700; margin: 0 0 var(--cds-gap-xs); padding-left: 10px; border-left: 3px solid var(--oktl-accent); }
+.cfo-lead { margin: 0; max-width: 80ch; font-size: 16px; line-height: 1.5; }
+.cfo-lead b[data-draw="leadTxt"] { color: var(--oktl-accent); }
+.cfo-sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: 0 0 var(--cds-gap-sm); line-height: 1.45; }
+.cfo-sub b[data-draw="svaTxt"] { color: var(--oktl-accent); }
+.cfo-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--cds-gap-md); }
+.cfo-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); }
+.cfo-tile { border-top: 3px solid var(--oktl-accent); }
+.cfo-tile .lbl { color: var(--color-fg-muted); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+.cfo-tile .big { font-weight: 700; font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 10px 0 6px; }
+.cfo-tile .note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.cfo-chart { position: relative; min-height: 120px; }
+.cfo-chart svg { display: block; }
+.cfo-chart svg text { font-size: 11px; fill: var(--cds-text-secondary); font-family: var(--oktl-sans); }
+.cfo-chart .lane { fill: var(--color-fg); font-size: 12px; }
+.cfo-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); box-shadow: var(--cds-shadow-popover); border-radius: 6px; padding: 6px 8px; font-size: 12px; line-height: 1.4; white-space: nowrap; z-index: 2; }
+.cfo-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-bottom: var(--cds-gap-sm); }
+.cfo-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cfo-sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.cfo-swl { width: 16px; height: 0; border-top: 2px dashed var(--cds-chart-reference); display: inline-block; }
+.cfo-tw { overflow-x: auto; }
+.cfo-table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+.cfo-table th { text-align: left; font-weight: 600; color: var(--color-fg-muted); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; text-transform: uppercase; letter-spacing: .08em; }
+.cfo-table td { padding: 6px 8px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.cfo-table td.num, .cfo-table th.num { text-align: right; font-family: var(--oktl-mono); }
+.cfo-table tr.past td { color: var(--color-fg-muted); }
+.cfo-table td.wrap { white-space: normal; min-width: 220px; }
+.cfo-tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--color-border-line); }
+.cfo-tab { font: 600 14px/1 var(--oktl-sans); color: var(--color-fg-muted); background: none; border: 0; border-bottom: 3px solid transparent; padding: 12px 14px; margin-bottom: -1px; cursor: pointer; }
+.cfo-tab:hover { color: var(--color-fg); }
+.cfo-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--oktl-accent); }
+.cfo-weeknav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cfo-weeknav button { font: 600 13px/1 var(--oktl-sans); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+.cfo-weeknav button:hover:not(:disabled) { border-color: var(--oktl-accent); }
+.cfo-weeknav button:disabled { opacity: .4; cursor: default; }
+.cfo-weeklbl { font: 600 14px/1 var(--oktl-mono); margin-left: 6px; }
+.cfo-weekbox { position: relative; }
+.cfo-sumtext { max-width: 85ch; font-size: 15px; line-height: 1.55; }
+.cfo-sumtext h3 { font-size: 15px; font-weight: 700; margin: 18px 0 6px; }
+.cfo-sumtext ul { margin: 6px 0 10px; padding-left: 20px; }
+.cfo-sumtext li { margin: 4px 0; }
+details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); font-size: 14px; }
+.cfo-err { color: var(--cds-chart-status-critical); }
+@media print { .cfo-tabs { display: none; } }
+</style>
+<script src="d3.min.js"></script>
+</head>
+<body>
+<div class="page"><div class="cfo">
+<header class="cfo-band">
+<div class="cfo-brand"><img src="logo.png" alt="Ok Tedi Mining"><span class="cfo-date" data-draw="today">—</span></div>
+<div><p class="cfo-eyebrow">Aiambak · CFO supply schedule</p><h1>CFO Vessel Schedule</h1><div class="cfo-upd" data-draw="updated">—</div></div>
+</header>
+<p class="cfo-lead">Next CFO into Aiambak: <b data-draw="nextFly">—</b>, ETA <b data-draw="nextFlyEta">—</b>. Next arrival at Kiunga: <b data-draw="nextRiver">—</b>, ETA <b data-draw="nextRiverEta">—</b>. CFO takes <b data-draw="leadTxt">—</b> days on average from leaving POM to reaching Kiunga by river.</p>
+<nav class="cfo-tabs" role="tablist" aria-label="Pages">
+<button type="button" class="cfo-tab" role="tab" data-tab="kpis" aria-selected="true">Overview</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="sva" aria-selected="false">Scheduled vs actual</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="motion" aria-selected="false">Time &amp; motion</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="site" aria-selected="false">Site fuel</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="amigo" aria-selected="false">Amigo 1</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="fleet" aria-selected="false">Fleet</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="summary" aria-selected="false">Summary</button>
+</nav>
+
+<section id="kpis" class="cfo-tiles cfo-page" role="tabpanel">
+<div class="cfo-card cfo-tile"><div class="lbl">CFO reaching Kiunga today</div><div class="big" data-draw="tKToday">—</div><div class="note">litres by river and truck, <span data-draw="tKDate">—</span></div></div>
+<div class="cfo-card cfo-tile"><div class="lbl">Kiunga / Tabubil stock today</div><div class="big" data-draw="tKStock">—</div><div class="note">litres at end of day, <span data-draw="tKDays">—</span> days of site use</div></div>
+<div class="cfo-card cfo-tile"><div class="lbl">CFO to Kiunga, next 7 days</div><div class="big" data-draw="tKWeek">—</div><div class="note">litres, against <span data-draw="tKNeed">—</span> L site need</div></div>
+</section>
+<section id="timeline" class="cfo-card cfo-page" data-with="kpis">
+<h2>Vessel timeline</h2>
+<p class="cfo-sub">Show 1, 2 or 8 weeks, starting today (shaded). Use the buttons to move back or forward; point at a bar for its times and litres.</p>
+<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Laden to Aiambak</span><span><i class="cfo-sw" data-swatch="1"></i>Laden to Kiunga</span><span><i class="cfo-sw" data-swatch="2"></i>Loading CFO</span><span><i class="cfo-sw" style="background:#d2560b;opacity:.4"></i>Alongside at Aiambak</span><span><i class="cfo-sw" data-swatch="m"></i>Returning empty</span></div>
+<div class="cfo-chart" data-draw="week" style="min-height:360px"></div>
+</section>
+<section id="kweeks" class="cfo-card cfo-page" data-with="kpis">
+<h2>CFO projected to reach Kiunga – day by day</h2>
+<p class="cfo-sub">Litres arriving at Kiunga each day by river and by truck, against the site's daily use, with Kiunga/Tabubil stock at the end of each day. Show 1, 2 or 8 weeks, starting today.</p>
+<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>By river</span><span><i class="cfo-sw" data-swatch="1"></i>By truck</span><span><i class="cfo-swl"></i>Daily site need</span></div>
+<div class="cfo-chart" data-draw="dayChart" style="min-height:260px"></div>
+</section>
+
+<section id="sva" class="cfo-card cfo-page" role="tabpanel" hidden>
+<h2>Scheduled vs actual – CFO reaching Kiunga</h2>
+<p class="cfo-sub">Scheduled is the plan locked on 19 Nov 2026; actual is what reached Kiunga. <b data-draw="svaTxt">—</b></p>
+<div class="cfo-legend"><span><i class="cfo-sw" style="background:#cfcfcf"></i>Scheduled (river + truck)</span><span><i class="cfo-sw" data-swatch="0"></i>Actual</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#5c5c5c"></i>Cumulative scheduled</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#d2560b"></i>Cumulative actual</span></div>
+<div class="cfo-chart" data-draw="svaChart" style="min-height:300px"></div>
+<div class="cfo-tw" style="margin-top:12px"><table class="cfo-table"><thead><tr><th>Date</th><th class="num">Scheduled (L)</th><th class="num">Actual river (L)</th><th class="num">Actual truck (L)</th><th class="num">Actual total (L)</th><th class="num">Variance (L)</th><th class="num">Cumulative variance (L)</th></tr></thead><tbody data-draw="svaRows"></tbody></table></div>
+</section>
+
+<section id="motion" class="cfo-card cfo-page" role="tabpanel" hidden>
+<h2>Time and motion</h2>
+<p class="cfo-sub">Where every vessel is over time. POM is at the bottom, Aiambak in the middle and Kiunga at the top, spaced by sailing time. Sloped lines are vessels on the move (solid laden, dashed empty); flat lines are time in port loading, discharging or waiting. Show all routes, or just POM – Aiambak or Aiambak – Kiunga; choose 2 weeks or 8 weeks, starting today; point at a line for times and litres.</p>
+<div class="cfo-legend"><span><i class="cfo-sw" data-vessel="Fly Resilience"></i>Fly Resilience</span><span><i class="cfo-sw" data-vessel="Fly Challenger"></i>Fly Challenger</span><span><i class="cfo-sw" data-vessel="Fly Warrior"></i>Fly Warrior</span><span><i class="cfo-sw" data-vessel="Fly Prosperity"></i>Fly Prosperity</span><span><i class="cfo-sw" data-vessel="Elimbari"></i>Elimbari</span><span><i class="cfo-sw" data-vessel="Diamond"></i>Diamond</span><span><i class="cfo-sw" data-vessel="Wonderland"></i>Wonderland</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:var(--color-fg)"></i>Laden</span><span><i class="cfo-swl" style="border-top-color:var(--color-fg)"></i>Empty</span></div>
+<div class="cfo-chart" data-draw="motion" style="min-height:400px"></div>
+</section>
+
+<section id="site" class="cfo-card cfo-page" role="tabpanel" hidden>
+<h2>Tabubil site fuel</h2>
+<p class="cfo-sub">Closing CFO stock on site each day: river and truck arrivals at Kiunga, less 350,000 L a day of site use. Lowest closing stock is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>.</p>
+<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Closing site stock</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span></div>
+<div class="cfo-chart" data-draw="siteChart" style="min-height:240px"></div>
+</section>
+
+<section id="amigo" class="cfo-card cfo-page" role="tabpanel" hidden>
+<h2>Amigo 1 stock and trucking</h2>
+<p class="cfo-sub">Daily closing stock in the Amigo 1 silo vessel and litres trucked out (7 trucks on 19 Nov, already loaded; from 20 Nov 14 trucks × 40,000 L = 560,000 L a day in three convoys at 5, 6 and 7 AM; a truck that can't be fuelled waits at Aiambak for the next convoy). CFO that won't fit waits aboard the Fly vessels.</p>
+<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Closing stock</span><span><i class="cfo-sw" data-swatch="1"></i>Trucked out</span><span><i class="cfo-swl"></i>Amigo 1 capacity</span></div>
+<div class="cfo-chart" data-draw="amigoChart" style="min-height:240px"></div>
+</section>
+
+<section id="fleet" class="cfo-card cfo-page" role="tabpanel" hidden>
+<h2>Fleet positions</h2>
+<p class="cfo-sub">Last known event for each vessel.</p>
+<div class="cfo-tw"><table class="cfo-table"><thead><tr><th>Vessel</th><th>Route</th><th class="num">CFO per voyage (L)</th><th>Last known event</th><th>Date &amp; time</th><th>Notes</th></tr></thead><tbody data-draw="fleetRows"></tbody></table></div>
+</section>
+
+<section id="summary" class="cfo-card cfo-page" role="tabpanel" hidden>
+<h2>Summary – CFO supply plan to Kiunga, 19 Nov 2026 to 13 Jan 2027</h2>
+<p class="cfo-sub">Prepared by Myles Rowcliff, OKTL.</p>
+<div class="cfo-sumtext">
+<p><b>The plan keeps Tabubil above one day of use every day and delivers about 39.1 ML to Kiunga over 8 weeks, against 19.6 ML of site use.</b></p>
+<ul>
+<li><b>Site use:</b> 350,000 L a day.</li>
+<li><b>Trucks:</b> the 7 trucks already loaded (280,000 L) and 4 diesel tank-tainers (4 × 21,000 L = 84,000 L) left Aiambak on the morning of 19 Nov; 14 trucks a day (560,000 L) from 20 Nov in three convoys: A at 5 AM (6 trucks), B at 6 AM (4 trucks), C at 7 AM (4 trucks). Convoys leave on time; any truck that can't be fuelled waits at Aiambak for the next convoy.</li>
+<li><b>Fly vessels:</b> Challenger, Resilience and Prosperity at 1.5 ML from their next loading, Warrior 1.0 ML; Warrior starts loading at POM at midday 19 Nov.</li>
+<li><b>Diamond:</b> POM – Aiambak shuttle (1 day loading at Johnny Traveller, 4 days each way, 12 hours discharging). Its first trip reaches Aiambak on 23 Nov and refuels Elimbari; after that it refuels Elimbari when it is waiting, otherwise it discharges into Amigo 1.</li>
+<li><b>Elimbari:</b> the only vessel on Aiambak – Kiunga, about one full run (950,000 – 1,000,000 L) a week. It gets first call on Fly vessel and Diamond CFO at Aiambak.</li>
+<li><b>Wonderland:</b> POM – Aiambak shuttle into Amigo 1 from 5 Dec, 9-day cycle with 1.5 days at each end (1 day freight, 12 hours CFO).</li>
+<li><b>Challenger and Resilience:</b> still on standby at Aiambak with 1.2 ML each; decision pending on whether they go up to Kiunga (figures assume they discharge at Aiambak).</li>
+<li><b>Site stock:</b> lowest about 700,000 L (2 days of use) around midday 19 Nov, before the first trucks and tank-tainers arrive. Elimbari is delayed and now discharges its 1.0 ML at Kiunga from about 7 AM 20 Nov. From 20 Nov site stock stays above 2.1 ML.</li>
+</ul>
+<h3>Trucks held at Aiambak</h3>
+<p>Convoys leave on time with every truck Amigo 1 can fill. A truck that can't be fuelled waits at Aiambak and goes with the next convoy once there is CFO. This happens once:</p>
+<ul>
+<li><b>9 Dec:</b> only Convoy A runs (6 trucks, 240,000 L). The 8 trucks of Convoys B and C wait at Aiambak overnight and go with Convoy A at 5 AM on 10 Dec, after Wonderland arrives at midnight. On 7 Dec Elimbari took 1.0 ML of Prosperity's 1.5 ML and nothing arrives on 8 Dec, so Amigo 1 runs low. All convoys are back to normal from 11 Dec.</li>
+</ul>
+<p>The 9 Dec shortfall is about 320,000 L for one day. Site stock is about 7.7 ML at that point, so it has no effect on Tabubil.</p>
+<h3>Risks and open items</h3>
+<ul>
+<li><b>Road:</b> if the road closes, Kiunga relies on Elimbari alone, about 1 ML a week – well under site use over a long closure.</li>
+<li><b>Fly vessel waiting:</b> about 196 hours in total over 8 weeks while Amigo 1 is full.</li>
+<li><b>Kiunga / Tabubil storage:</b> the plan builds site stock well above current levels; tank capacity needs confirming.</li>
+<li><b>Johnny Traveller:</b> Diamond loads about 950,000 L roughly every 9 – 10 days, on top of the Fly loads.</li>
+</ul>
+</div>
+</section>
+
+<details><summary>How the schedule is worked out</summary><p class="cfo-sub">POM–Aiambak round trip 9 days (including a day alongside at Aiambak) plus 1 day loading at POM; a Fly vessel does not leave Aiambak until all its CFO is off, so it waits when Amigo 1 is full. Aiambak–Kiunga round trip 5 days plus 12 hours refuelling at Aiambak and 12 hours discharging at Kiunga. River vessels get first call on Fly vessel CFO at Aiambak; whatever is left goes into Amigo 1, which trucks out in three convoys a day. Wonderland shuttles POM–Aiambak on a 9-day cycle into Amigo 1. Diamond (950,000 L) shuttles POM–Aiambak like a Fly vessel. The schedule is simulated hour by hour. Lead time counts only CFO that goes to Kiunga by river.</p></details>
+</div></div>
+
+<script>
+/* Minimal stand-in for the claude.ai dashboard runtime: loads docs/data/*.json, runs calcs, renders draws. */
+const dash = (() => {
+  const loaders = {}, calcs = {}, draws = {}, states = new WeakMap(), data = {};
+  const render = (name) => {
+    const def = draws[name]; if (!def) return;
+    document.querySelectorAll('[data-draw="' + name + '"]').forEach((el) => {
+      try {
+        if (def.mount) { if (!states.has(el)) states.set(el, def.mount(el)); def.update(el, states.get(el)); }
+        else def.update(el);
+      } catch (e) { console.error(name, e); }
+    });
+  };
+  return {
+    loader: (id, o) => { loaders[id] = o.fn; },
+    calc: (id, o) => { calcs[id] = o; },
+    draw: (name, def) => { if (def === undefined) { render(name); return; } draws[name] = typeof def === 'function' ? {update: def} : def; },
+    data: (id) => data[id] || {status: 'loading'},
+    setLink: (id) => { history.replaceState(null, '', '#' + id); },
+    renderAll: () => Object.keys(draws).forEach(render),
+    async start() {
+      this.renderAll();
+      await Promise.all(Object.keys(loaders).map(async (id) => {
+        try { const r = await fetch('data/' + id + '.json', {cache: 'no-cache'}); if (!r.ok) throw new Error(r.status); data[id] = {status: 'ok', data: loaders[id]({answer: await r.json()}).rows}; }
+        catch (e) { data[id] = {status: 'error', error: String(e)}; }
+      }));
+      Object.entries(calcs).forEach(([id, c]) => {
+        const ins = c.inputs.map((i) => data[i]);
+        data[id] = ins.every((d) => d && d.status === 'ok') ? {status: 'ok', data: c.fn(...ins.map((d) => d.data))} : {status: 'error'};
+      });
+      try { const m = await (await fetch('data/meta.json', {cache: 'no-cache'})).json(); data.meta = {status: 'ok', data: [m]}; } catch (e) { data.meta = {status: 'error'}; }
+      this.renderAll();
+    }
+  };
+})();
+let cfoRT; window.addEventListener('resize', () => { clearTimeout(cfoRT); cfoRT = setTimeout(() => dash.renderAll(), 200); });
+</script>
+
+<script>
+const cfoLoad = ({answer}) => {
+  const v = answer && answer.value;
+  if (!v || !v.rows) throw new Error('No rows');
+  const cv = (c) => { if (c == null || c === '') return null; if (typeof c !== 'object') return c; if ('value' in c) return cv(c.value); if ('number' in c) return c.number; if ('dateTime' in c) return c.dateTime; if ('date' in c) return c.date; if ('markdown' in c) return c.markdown; return null; };
+  const keys = Object.keys(v.rows).map(Number).sort((x, y) => x - y);
+  const head = v.rows[String(keys[0])].map(cv);
+  const rows = keys.slice(1).map((k) => { const r = v.rows[String(k)]; const o = {}; head.forEach((h, i) => { o[h] = cv(r[i]); }); return o; }).filter((o) => o[head[0]] != null);
+  return {columns: head, rows};
+};
+['fly', 'river', 'amigo', 'fleet', 'amigoset', 'site', 'sva'].forEach((id) => dash.loader(id, {fn: cfoLoad}));
+
+dash.calc('kpi', {inputs: ['fly'], fn: (fly) => {
+  const leads = fly.map((r) => r['Lead time POM→Kiunga (days)']).filter((x) => typeof x === 'number');
+  const avg = leads.length ? leads.reduce((s, x) => s + x, 0) / leads.length : null;
+  return [{avgLeadDays: avg == null ? null : Math.round(avg * 10) / 10}];
+}});
+dash.calc('nextup', {inputs: ['fly', 'river'], fn: (fly, river) => {
+  const now = new Date(), p = (s) => (s ? new Date(s) : null);
+  const f = fly.filter((r) => p(r['ETA Aiambak']) > now).sort((a, b) => p(a['ETA Aiambak']) - p(b['ETA Aiambak']))[0];
+  const k = river.filter((r) => p(r['ETA Kiunga']) > now).sort((a, b) => p(a['ETA Kiunga']) - p(b['ETA Kiunga']))[0];
+  return [{nextFly: f ? f.Vessel : null, nextFlyEta: f ? f['ETA Aiambak'] : null, nextRiver: k ? k.Vessel : null, nextRiverEta: k ? k['ETA Kiunga'] : null}];
+}});
+dash.calc('kiunga', {inputs: ['site'], fn: (site) => {
+  const key = d3.timeFormat('%Y-%m-%d')(new Date());
+  const i = site.findIndex((r) => r.Date === key);
+  if (i < 0) return [{today: key, todayInL: null, todayStockL: null, todayDays: null, next7InL: null, next7NeedL: null}];
+  const r = site[i], wk = site.slice(i, i + 7);
+  const inn = (x) => (Number(x['River arrivals (L)']) || 0) + (Number(x['Truck arrivals (L)']) || 0);
+  const use = d3.max(site, (x) => Number(x['Site use (L)']) || 0) || 0;
+  return [{today: key, todayInL: inn(r), todayStockL: Math.round(Number(r['Closing stock (L)']) || 0), todayDays: Math.round((Number(r['Days of fuel']) || 0) * 10) / 10, next7InL: wk.reduce((s, x) => s + inn(x), 0), next7NeedL: use * wk.length}];
+}});
+dash.calc('sitekpi', {inputs: ['site'], fn: (site) => {
+  const rows = site.filter((r) => typeof r['Closing stock (L)'] === 'number');
+  if (!rows.length) return [{minStock: null, minDay: null}];
+  const m = rows.reduce((a, b) => (b['Closing stock (L)'] < a['Closing stock (L)'] ? b : a));
+  return [{minStock: Math.round(m['Closing stock (L)']), minDay: m.Date}];
+}});
+
+const fmtL = d3.format(',.0f');
+const parseT = (s) => { if (!s) return null; const d = new Date(String(s).length === 10 ? s + 'T00:00:00' : s); return isNaN(d) ? null : d; };
+const fmtT = (s) => { const d = parseT(s); return d ? d3.timeFormat('%a %d %b, %-I %p')(d) : '—'; };
+const fmtD = d3.timeFormat('%a %d %b');
+const iso = d3.timeFormat('%Y-%m-%dT%H:%M:%S');
+const row0 = (id) => { const d = dash.data(id); return d.status === 'ok' && d.data && d.data[0] ? d.data[0] : null; };
+const put = (name, fn) => dash.draw(name, (el) => { const v = fn(); el.textContent = v == null || v === '' ? '—' : v; });
+const notReady = (el, ...ids) => { const ds = ids.map((i) => dash.data(i)); if (ds.every((d) => d.status === 'ok')) return false; el.textContent = ds.some((d) => d.status === 'error') ? 'Failed to load the data' : 'Loading…'; return true; };
+
+put('today', () => d3.timeFormat('%A %-d %B %Y')(new Date()));
+put('updated', () => { const m = row0('meta'); return m ? 'Data updated ' + d3.timeFormat('%-d %b %Y, %-I:%M %p')(parseT(m.updated)) + (m.note ? ' · ' + m.note : '') : null; });
+put('nextFly', () => (row0('nextup') || {}).nextFly);
+put('nextFlyEta', () => { const r = row0('nextup'); return r && r.nextFlyEta ? fmtT(r.nextFlyEta) : null; });
+put('nextRiver', () => (row0('nextup') || {}).nextRiver);
+put('nextRiverEta', () => { const r = row0('nextup'); return r && r.nextRiverEta ? fmtT(r.nextRiverEta) : null; });
+put('leadTxt', () => { const r = row0('kpi'); return r && r.avgLeadDays != null ? r.avgLeadDays.toFixed(1) : null; });
+put('tKToday', () => { const r = row0('kiunga'); return r && r.todayInL != null ? fmtL(r.todayInL) : null; });
+put('tKDate', () => { const r = row0('kiunga'); return r ? fmtD(parseT(r.today)) : null; });
+put('tKStock', () => { const r = row0('kiunga'); return r && r.todayStockL != null ? fmtL(r.todayStockL) : null; });
+put('tKDays', () => { const r = row0('kiunga'); return r && r.todayDays != null ? r.todayDays.toFixed(1) : null; });
+put('tKWeek', () => { const r = row0('kiunga'); return r && r.next7InL != null ? fmtL(r.next7InL) : null; });
+put('tKNeed', () => { const r = row0('kiunga'); return r && r.next7NeedL != null ? fmtL(r.next7NeedL) : null; });
+put('siteMin', () => { const r = row0('sitekpi'); return r && r.minStock != null ? fmtL(r.minStock) : null; });
+put('siteMinDay', () => { const r = row0('sitekpi'); return r && r.minDay ? fmtD(parseT(r.minDay)) : null; });
+
+const cfoShow = (id) => {
+  const pages = Array.from(document.querySelectorAll('.cfo-page'));
+  if (!pages.some((p) => p.id === id)) id = 'kpis';
+  const host = pages.find((p) => p.id === id);
+  if (host && host.getAttribute('data-with')) id = host.getAttribute('data-with');
+  pages.forEach((p) => { p.hidden = !(p.id === id || p.getAttribute('data-with') === id); });
+  document.querySelectorAll('.cfo-tab').forEach((b) => b.setAttribute('aria-selected', b.getAttribute('data-tab') === id ? 'true' : 'false'));
+  return id;
+};
+document.querySelectorAll('.cfo-tab').forEach((b) => b.addEventListener('click', () => { const id = cfoShow(b.getAttribute('data-tab')); dash.setLink(id); dash.renderAll(); }));
+cfoShow((location.hash || '').replace('#', '') || 'kpis');
+
+const OKTL = ['#d2560b', '#f2ac11', '#5c5c5c'];
+document.querySelectorAll('[data-swatch]').forEach((el) => { const k = el.getAttribute('data-swatch'); el.style.background = k === 'm' ? 'var(--cds-chart-muted)' : OKTL[Number(k)]; });
+const VCOL = {'Fly Resilience': '#d2560b', 'Fly Challenger': '#f2ac11', 'Fly Warrior': '#8f3d0a', 'Fly Prosperity': '#e14b2d', 'Elimbari': '#2f6db5', 'Diamond': '#2a9d8f', 'Wonderland': '#7b5ea7'};
+document.querySelectorAll('[data-vessel]').forEach((el) => { el.style.background = VCOL[el.getAttribute('data-vessel')] || 'var(--cds-chart-muted)'; });
+
+const cfoSpanUI = (st, N) => {
+  [[st.b1, 7], [st.b2, 14], [st.b8, 56]].forEach(([b, n]) => { const a = n === N; b.style.background = a ? 'var(--oktl-accent)' : ''; b.style.color = a ? '#fff' : ''; b.style.borderColor = a ? 'var(--oktl-accent)' : ''; b.setAttribute('aria-pressed', a ? 'true' : 'false'); });
+  const t = N === 7 ? '7 days' : N === 14 ? '2 weeks' : '8 weeks';
+  st.prev.textContent = '‹ Previous ' + t; st.next.textContent = 'Next ' + t + ' ›';
+};
+const tipAt = (tip, host, ev, lines) => {
+  tip.replaceChildren(...lines.filter((t) => t !== '').map((t, i) => { const d = document.createElement('div'); d.textContent = t; if (i === 0) d.style.fontWeight = '600'; return d; }));
+  tip.style.display = 'block';
+  const b = host.getBoundingClientRect();
+  let x = ev.clientX - b.left + 12; const y = ev.clientY - b.top + 12;
+  const w = tip.offsetWidth;
+  if (x + w > b.width) x = Math.max(0, ev.clientX - b.left - w - 12);
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+};
+const spanNav = (el, name, span) => {
+  const nav = document.createElement('div'); nav.className = 'cfo-weeknav';
+  const mk = (t) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; return b; };
+  const prev = mk('‹'), cur = mk('Today'), next = mk('›'), lbl = document.createElement('span'); lbl.className = 'cfo-weeklbl';
+  const b1 = mk('1 week'), b2 = mk('2 weeks'), b8 = mk('8 weeks'), sep = document.createElement('span'); sep.style.width = '10px';
+  nav.append(b1, b2, b8, sep, prev, cur, next, lbl);
+  const box = document.createElement('div'); box.className = 'cfo-weekbox';
+  el.append(nav, box);
+  const st = {off: 0, span, lbl, box, prev, next, b1, b2, b8};
+  [[b1, 7], [b2, 14], [b8, 56]].forEach(([b, n]) => b.addEventListener('click', () => { st.span = n; st.off = 0; dash.draw(name); }));
+  prev.addEventListener('click', () => { st.off -= 1; dash.draw(name); });
+  next.addEventListener('click', () => { st.off += 1; dash.draw(name); });
+  cur.addEventListener('click', () => { st.off = 0; dash.draw(name); });
+  return st;
+};
+
+dash.draw('week', {
+  mount: (el) => spanNav(el, 'week', 7),
+  update: (el, st) => {
+    if (notReady(st.box, 'fly', 'river')) { st.lbl.textContent = ''; return; }
+    const f = dash.data('fly'), r = dash.data('river'), segs = [];
+    const add = (lane, kind, a, b, leg, short, cfo) => { const s = parseT(a), e = parseT(b); if (s && e && e > s) segs.push({lane, kind, s, e, leg, short, cfo}); };
+    f.data.forEach((d) => {
+      if (!d['ETA Aiambak']) return;
+      add(d.Vessel, 'load', d['Load start POM'], d['Depart POM'], 'Loading CFO at POM', 'Loading', d['CFO (L)']);
+      add(d.Vessel, 'ladenA', d['Depart POM'], d['ETA Aiambak'], 'POM → Aiambak, voyage ' + d['Voy #'], '→ Aiambak', d['CFO (L)']);
+      add(d.Vessel, 'along', d['ETA Aiambak'], d['Depart Aiambak (empty)'], 'Alongside at Aiambak' + (d['Transferred to'] ? ' – to ' + d['Transferred to'] : ''), 'At Aiambak', d['CFO (L)']);
+      add(d.Vessel, 'empty', d['Depart Aiambak (empty)'], d['ETA POM (return)'], 'Aiambak → POM (empty)', '→ POM', null);
+    });
+    r.data.forEach((d) => {
+      add(d.Vessel, 'load', d['Load start'], d.Depart, 'Loading from ' + (d['Loaded from'] || ''), 'Loading', d['CFO (L)']);
+      add(d.Vessel, 'ladenK', d.Depart, d['ETA Kiunga'], (d['Loaded at'] === 'POM' ? 'POM' : 'Aiambak') + ' → Kiunga', '→ Kiunga', d['CFO (L)']);
+      add(d.Vessel, 'empty', d['ETA Kiunga'], d['ETA Aiambak (return)'], 'Kiunga → Aiambak (empty)', '→ Aiambak', null);
+    });
+    st.box.replaceChildren();
+    if (!segs.length) { st.box.textContent = 'No voyages in the schedule'; return; }
+    const order = ['Fly Resilience', 'Fly Challenger', 'Fly Warrior', 'Fly Prosperity', 'Elimbari', 'Diamond', 'Wonderland'];
+    const lanes = order.filter((n) => segs.some((s) => s.lane === n)).concat([...new Set(segs.map((s) => s.lane))].filter((n) => !order.includes(n)));
+    const N = st.span || 7, wk = N * 864e5, today0 = d3.timeDay.floor(new Date());
+    cfoSpanUI(st, N);
+    const minOff = Math.floor((d3.min(segs, (s) => s.s) - today0) / wk), maxOff = Math.floor((d3.max(segs, (s) => s.e) - today0) / wk);
+    st.off = Math.max(minOff, Math.min(maxOff, st.off));
+    st.prev.disabled = st.off <= minOff; st.next.disabled = st.off >= maxOff;
+    const w0 = d3.timeDay.offset(today0, st.off * N), w1 = d3.timeDay.offset(w0, N);
+    st.lbl.textContent = d3.timeFormat('%a %-d %b')(w0) + ' – ' + d3.timeFormat('%a %-d %b %Y')(d3.timeDay.offset(w1, -1));
+    const W = Math.max(300, st.box.clientWidth || el.clientWidth), rowH = 42, hdr = 46, R = 2, H = hdr + lanes.length * rowH + 2;
+    const svg = d3.select(st.box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const lab = svg.append('g').selectAll('text').data(lanes).join('text').attr('class', 'lane').style('font-weight', 600).text((d) => d);
+    let lw = 0; lab.each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+    const L = Math.ceil(lw) + 14, x = d3.scaleTime().domain([w0, w1]).range([L, W - R]);
+    const days = d3.timeDay.range(w0, w1), dw = (W - R - L) / N;
+    const labDays = N > 14 ? days.filter((d, i) => i % 7 === 0) : days, lwid = N > 14 ? dw * 7 : dw;
+    const key = d3.timeFormat('%Y-%m-%d'), todayKey = key(new Date()), y = (n) => hdr + lanes.indexOf(n) * rowH;
+    lab.attr('x', 0).attr('y', (d) => y(d) + rowH / 2 + 4);
+    const cols = svg.append('g');
+    cols.selectAll('rect').data(days).join('rect').attr('x', (d) => x(d)).attr('y', 0).attr('width', dw).attr('height', H)
+      .style('fill', (d) => (key(d) === todayKey ? 'var(--oktl-accent)' : (d.getDay() === 0 || d.getDay() === 6 ? 'var(--cds-chart-grid)' : 'transparent'))).style('opacity', (d) => (key(d) === todayKey ? 0.1 : 0.35));
+    const narrow = lwid < 70;
+    cols.selectAll('text.dn').data(labDays).join('text').attr('class', 'dn').attr('x', (d) => x(d) + lwid / 2).attr('y', 17).attr('text-anchor', 'middle').style('font-weight', 700).style('font-size', '12px').style('fill', (d) => (key(d) === todayKey ? 'var(--oktl-accent)' : 'var(--color-fg)')).text((d) => d3.timeFormat(narrow ? '%a' : '%A')(d));
+    cols.selectAll('text.dd').data(labDays).join('text').attr('class', 'dd').attr('x', (d) => x(d) + lwid / 2).attr('y', 34).attr('text-anchor', 'middle').text((d) => d3.timeFormat(narrow ? '%-d/%-m' : '%-d %b')(d));
+    svg.append('g').selectAll('line').data(days.concat([w1])).join('line').attr('x1', (d) => x(d)).attr('x2', (d) => x(d)).attr('y1', 0).attr('y2', H).style('stroke', 'var(--color-border-line)');
+    svg.append('g').selectAll('line').data(d3.range(lanes.length + 1)).join('line').attr('x1', 0).attr('x2', W - R).attr('y1', (i) => hdr + i * rowH).attr('y2', (i) => hdr + i * rowH).style('stroke', 'var(--color-border-line)');
+    const col = {ladenA: OKTL[0], ladenK: OKTL[1], load: OKTL[2], along: OKTL[0], empty: 'var(--cds-chart-muted)'};
+    const ink = {ladenA: '#fff', ladenK: '#1a1a1a', load: '#fff', along: '#1a1a1a', empty: 'var(--color-fg)'};
+    const vis = segs.filter((s) => s.e > w0 && s.s < w1).map((s) => Object.assign({}, s, {x0: x(s.s < w0 ? w0 : s.s), x1: x(s.e > w1 ? w1 : s.e)}));
+    const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; st.box.appendChild(tip);
+    const g = svg.append('g').selectAll('g').data(vis).join('g');
+    g.append('rect').attr('x', (s) => s.x0 + 1).attr('width', (s) => Math.max(2, s.x1 - s.x0 - 2)).attr('y', (s) => y(s.lane) + (s.kind === 'empty' ? 13 : 7)).attr('height', (s) => (s.kind === 'empty' ? rowH - 26 : rowH - 14)).attr('rx', 4).style('fill', (s) => col[s.kind]).style('opacity', (s) => (s.kind === 'along' ? 0.4 : 1));
+    g.filter((s) => s.x1 - s.x0 >= 58 && s.kind !== 'empty').append('text').attr('x', (s) => s.x0 + 7).attr('y', (s) => y(s.lane) + rowH / 2 + 4).style('fill', (s) => ink[s.kind]).style('font-size', '11px').style('font-weight', 600)
+      .text((s) => s.short + (s.x1 - s.x0 >= 130 && s.e <= w1 ? ' · ' + d3.timeFormat(s.kind === 'ladenA' || s.kind === 'ladenK' ? 'arr %a %-I %p' : 'to %a %-I %p')(s.e) : ''));
+    g.append('rect').attr('x', (s) => s.x0).attr('width', (s) => Math.max(4, s.x1 - s.x0)).attr('y', (s) => y(s.lane)).attr('height', rowH).style('fill', 'transparent')
+      .on('pointermove', (ev, s) => tipAt(tip, st.box, ev, [s.lane, s.leg, fmtT(iso(s.s)) + ' → ' + fmtT(iso(s.e))].concat(s.cfo ? [fmtL(s.cfo) + ' L'] : [])))
+      .on('pointerleave', () => { tip.style.display = 'none'; });
+    const now = new Date();
+    if (now >= w0 && now < w1) { svg.append('line').attr('x1', x(now)).attr('x2', x(now)).attr('y1', hdr - 4).attr('y2', H).style('stroke', 'var(--oktl-accent)').style('stroke-width', 2); svg.append('text').attr('x', x(now) + 3).attr('y', hdr - 4).style('fill', 'var(--oktl-accent)').style('font-size', '10px').style('font-weight', 700).text('NOW'); }
+  }
+});
+
+dash.draw('dayChart', {
+  mount: (el) => spanNav(el, 'dayChart', 7),
+  update: (el, st) => {
+    if (notReady(st.box, 'site')) { st.lbl.textContent = ''; return; }
+    const all = dash.data('site').data.map((d) => ({t: parseT(d.Date), rv: Number(d['River arrivals (L)']) || 0, tr: Number(d['Truck arrivals (L)']) || 0, use: Number(d['Site use (L)']) || 0, stock: Number(d['Closing stock (L)']) || 0, st: d.Status})).filter((d) => d.t);
+    st.box.replaceChildren();
+    if (!all.length) { st.box.textContent = 'No days in the schedule'; return; }
+    const N = st.span || 7; cfoSpanUI(st, N);
+    const today0 = d3.timeDay.floor(new Date()), first = all[0].t, last = all[all.length - 1].t;
+    const minOff = Math.floor((first - today0) / (N * 864e5)), maxOff = Math.floor((last - today0) / (N * 864e5));
+    st.off = Math.max(minOff, Math.min(maxOff, st.off));
+    st.prev.disabled = st.off <= minOff; st.next.disabled = st.off >= maxOff;
+    const w0 = d3.timeDay.offset(today0, st.off * N), w1 = d3.timeDay.offset(w0, N);
+    const rows = all.filter((d) => d.t >= w0 && d.t < w1), day = d3.max(all, (d) => d.use) || 0;
+    const tot = rows.reduce((a, d) => a + d.rv + d.tr, 0), need = day * rows.length;
+    st.lbl.textContent = d3.timeFormat('%a %-d %b')(w0) + ' – ' + d3.timeFormat('%a %-d %b')(d3.timeDay.offset(w1, -1)) + '  ·  ' + fmtL(tot) + ' L to Kiunga vs ' + fmtL(need) + ' L need';
+    if (!rows.length) { st.box.textContent = 'No days in the schedule for this period'; return; }
+    const W = Math.max(300, st.box.clientWidth || el.clientWidth), H = 270, T = 20, B = 52, R = 6;
+    const svg = d3.select(st.box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const y = d3.scaleLinear().domain([0, Math.max(day * 1.5, d3.max(rows, (d) => d.rv + d.tr)) * 1.12]).nice().range([H - B, T]);
+    const gy = svg.append('g').call(d3.axisLeft(y).ticks(5).tickFormat((v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : (v / 1e3).toFixed(0) + 'k')));
+    let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+    const L = Math.ceil(lw) + 10;
+    gy.attr('transform', `translate(${L},0)`); gy.select('.domain').remove(); gy.selectAll('line').attr('x2', W - L - R).style('stroke', 'var(--cds-chart-grid)');
+    const days = d3.timeDay.range(w0, w1), x = d3.scaleBand().domain(days.map((d) => +d)).range([L, W - R]).padding(0.28);
+    const byKey = new Map(rows.map((d) => [+d.t, d])), tk = d3.timeFormat('%Y-%m-%d'), todayKey = tk(new Date());
+    const narrow = x.step() < 70, labDays = N > 14 ? days.filter((d, i) => i % 7 === 0) : days;
+    const lab = svg.append('g');
+    lab.selectAll('text.d1').data(labDays).join('text').attr('class', 'd1').attr('x', (d) => x(+d) + x.bandwidth() / 2).attr('y', H - B + 15).attr('text-anchor', 'middle').style('font-weight', 700).style('fill', (d) => (tk(d) === todayKey ? 'var(--oktl-accent)' : 'var(--color-fg)')).text((d) => d3.timeFormat(narrow ? '%a' : '%a %-d %b')(d));
+    lab.selectAll('text.d2').data(labDays).join('text').attr('class', 'd2').attr('x', (d) => x(+d) + x.bandwidth() / 2).attr('y', H - B + 30).attr('text-anchor', 'middle').text((d) => (narrow ? d3.timeFormat('%-d/%-m')(d) : ''));
+    if (N <= 14) lab.selectAll('text.d3').data(labDays).join('text').attr('class', 'd3').attr('x', (d) => x(+d) + x.bandwidth() / 2).attr('y', H - B + (narrow ? 44 : 32)).attr('text-anchor', 'middle')
+      .style('fill', (d) => { const r = byKey.get(+d); return r && r.stock < day ? 'var(--cds-chart-status-critical)' : 'var(--cds-text-secondary)'; })
+      .text((d) => { const r = byKey.get(+d); if (!r) return ''; return (narrow ? '' : 'Stock ') + (r.stock >= 1e6 ? (r.stock / 1e6).toFixed(2) + 'M' : Math.round(r.stock / 1e3) + 'k'); });
+    svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--cds-chart-axis)');
+    const g = svg.append('g'), vis = days.map((d) => byKey.get(+d)).filter(Boolean);
+    g.selectAll('rect.r').data(vis).join('rect').attr('class', 'r').attr('x', (d) => x(+d.t)).attr('width', x.bandwidth()).attr('y', (d) => y(d.rv)).attr('height', (d) => y(0) - y(d.rv)).attr('rx', 2).style('fill', OKTL[0]);
+    g.selectAll('rect.t').data(vis).join('rect').attr('class', 't').attr('x', (d) => x(+d.t)).attr('width', x.bandwidth()).attr('y', (d) => y(d.rv + d.tr)).attr('height', (d) => y(d.rv) - y(d.rv + d.tr)).attr('rx', 2).style('fill', OKTL[1]);
+    g.selectAll('line.n').data(vis).join('line').attr('class', 'n').attr('x1', (d) => x(+d.t) - 4).attr('x2', (d) => x(+d.t) + x.bandwidth() + 4).attr('y1', y(day)).attr('y2', y(day)).style('stroke', 'var(--cds-chart-reference)').style('stroke-width', 2).style('stroke-dasharray', '4 3');
+    g.selectAll('text.v').data(N > 14 ? [] : vis).join('text').attr('class', 'v').attr('x', (d) => x(+d.t) + x.bandwidth() / 2).attr('y', (d) => Math.min(y(d.rv + d.tr), y(day)) - 5).attr('text-anchor', 'middle').style('font-weight', 600).style('fill', 'var(--color-fg)')
+      .text((d) => { const v = d.rv + d.tr; return v === 0 ? '0' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : Math.round(v / 1e3) + 'k'; });
+    const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; st.box.appendChild(tip);
+    g.selectAll('rect.h').data(vis).join('rect').attr('class', 'h').attr('x', (d) => x(+d.t) - x.step() * 0.14).attr('width', x.step()).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
+      .on('pointermove', (ev, d) => tipAt(tip, st.box, ev, [d3.timeFormat('%A %-d %B')(d.t), 'By river: ' + fmtL(d.rv) + ' L', 'By truck: ' + fmtL(d.tr) + ' L', 'Total to Kiunga: ' + fmtL(d.rv + d.tr) + ' L', 'Site use: ' + fmtL(d.use) + ' L', 'End-of-day stock: ' + fmtL(d.stock) + ' L (' + (day ? (d.stock / day).toFixed(1) : '—') + ' days)']))
+      .on('pointerleave', () => { tip.style.display = 'none'; });
+  }
+});
+
+dash.draw('motion', {
+  mount: (el) => {
+    const mk = (t) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; return b; };
+    const nav = document.createElement('div'); nav.className = 'cfo-weeknav';
+    const prev = mk('‹'), cur = mk('Today'), next = mk('›'), two = mk('2 weeks'), eight = mk('8 weeks');
+    const lbl = document.createElement('span'); lbl.className = 'cfo-weeklbl';
+    const sep = document.createElement('span'); sep.style.width = '10px';
+    nav.append(two, eight, sep, prev, cur, next, lbl);
+    const nav2 = document.createElement('div'); nav2.className = 'cfo-weeknav';
+    const vAll = mk('All routes'), vPA = mk('POM – Aiambak'), vAK = mk('Aiambak – Kiunga');
+    nav2.append(vAll, vPA, vAK);
+    const box = document.createElement('div'); box.className = 'cfo-weekbox';
+    el.append(nav2, nav, box);
+    const st = {off: 0, span: 56, view: 'ak', lbl, box, prev, next, two, eight, vAll, vPA, vAK};
+    vAll.addEventListener('click', () => { st.view = 'all'; dash.draw('motion'); });
+    vPA.addEventListener('click', () => { st.view = 'pa'; dash.draw('motion'); });
+    vAK.addEventListener('click', () => { st.view = 'ak'; dash.draw('motion'); });
+    two.addEventListener('click', () => { st.span = 14; st.off = 0; dash.draw('motion'); });
+    eight.addEventListener('click', () => { st.span = 56; st.off = 0; dash.draw('motion'); });
+    prev.addEventListener('click', () => { st.off -= 1; dash.draw('motion'); });
+    next.addEventListener('click', () => { st.off += 1; dash.draw('motion'); });
+    cur.addEventListener('click', () => { st.off = 0; dash.draw('motion'); });
+    return st;
+  },
+  update: (el, st) => {
+    if (notReady(st.box, 'fly', 'river')) { st.lbl.textContent = ''; return; }
+    const f = dash.data('fly'), r = dash.data('river');
+    const LOC = {POM: 0, AIA: 4, KIU: 6.5}, NAME = {POM: 'POM', AIA: 'Aiambak', KIU: 'Kiunga'}, segs = [];
+    const seg = (v, a, la, b, lb, kind, leg, cfo) => { const s = parseT(a), e = parseT(b); if (s && e && e > s) segs.push({v, s, e, la, lb, kind, leg, cfo}); };
+    f.data.forEach((d) => {
+      if (!d['ETA Aiambak']) return;
+      seg(d.Vessel, d['Load start POM'], 'POM', d['Depart POM'], 'POM', 'port', 'Loading CFO at POM', d['CFO (L)']);
+      seg(d.Vessel, d['Depart POM'], 'POM', d['ETA Aiambak'], 'AIA', 'laden', 'POM → Aiambak (laden)', d['CFO (L)']);
+      seg(d.Vessel, d['ETA Aiambak'], 'AIA', d['Depart Aiambak (empty)'], 'AIA', 'port', 'At Aiambak' + (d['Transferred to'] ? ' – discharging to ' + d['Transferred to'] : ''), d['CFO (L)']);
+      seg(d.Vessel, d['Depart Aiambak (empty)'], 'AIA', d['ETA POM (return)'], 'POM', 'empty', 'Aiambak → POM (empty)', null);
+    });
+    r.data.forEach((d) => {
+      const from = d['Loaded at'] === 'POM' ? 'POM' : 'AIA';
+      const ret = parseT(d['ETA Aiambak (return)']), depK = ret ? d3.timeHour.offset(ret, -60) : null;
+      seg(d.Vessel, d['Load start'], from, d.Depart, from, 'port', 'Loading CFO' + (d['Loaded from'] ? ' from ' + d['Loaded from'] : ''), d['CFO (L)']);
+      seg(d.Vessel, d.Depart, from, d['ETA Kiunga'], 'KIU', 'laden', NAME[from] + ' → Kiunga (laden)', d['CFO (L)']);
+      if (depK) { seg(d.Vessel, d['ETA Kiunga'], 'KIU', iso(depK), 'KIU', 'port', 'Discharging at Kiunga', d['CFO (L)']); seg(d.Vessel, iso(depK), 'KIU', d['ETA Aiambak (return)'], 'AIA', 'empty', 'Kiunga → Aiambak (empty)', null); }
+    });
+    st.box.replaceChildren();
+    if (!segs.length) { st.box.textContent = 'No voyages in the schedule'; return; }
+    const span = st.span || 14, today0 = d3.timeDay.floor(new Date()), big = span > 14;
+    const on = (b, a) => { b.style.background = a ? 'var(--oktl-accent)' : ''; b.style.color = a ? '#fff' : ''; b.style.borderColor = a ? 'var(--oktl-accent)' : ''; b.setAttribute('aria-pressed', a ? 'true' : 'false'); };
+    on(st.two, !big); on(st.eight, big);
+    const view = st.view || 'all';
+    on(st.vAll, view === 'all'); on(st.vPA, view === 'pa'); on(st.vAK, view === 'ak');
+    const LOCS = view === 'pa' ? ['POM', 'AIA'] : view === 'ak' ? ['AIA', 'KIU'] : ['POM', 'AIA', 'KIU'];
+    const inView = (s) => LOCS.includes(s.la) && LOCS.includes(s.lb);
+    st.prev.textContent = big ? '‹ Previous 8 weeks' : '‹ Previous 2 weeks'; st.next.textContent = big ? 'Next 8 weeks ›' : 'Next 2 weeks ›';
+    const minOff = Math.floor((d3.min(segs, (s) => s.s) - today0) / (span * 864e5)), maxOff = Math.floor((d3.max(segs, (s) => s.e) - today0) / (span * 864e5));
+    st.off = Math.max(minOff, Math.min(maxOff, st.off));
+    st.prev.disabled = st.off <= minOff; st.next.disabled = st.off >= maxOff;
+    const w0 = d3.timeDay.offset(today0, st.off * span), w1 = d3.timeDay.offset(w0, span);
+    st.lbl.textContent = d3.timeFormat('%a %-d %b')(w0) + ' – ' + d3.timeFormat('%a %-d %b %Y')(d3.timeDay.offset(w1, -1));
+    const W = Math.max(320, st.box.clientWidth || el.clientWidth), H = 380, T = 16, B = 40, R = 8;
+    const svg = d3.select(st.box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const y = d3.scaleLinear().domain([LOC[LOCS[0]], LOC[LOCS[LOCS.length - 1]]]).range([H - B, T]);
+    const yl = svg.append('g').selectAll('text').data(LOCS).join('text').attr('class', 'lane').style('font-weight', 700).text((k) => NAME[k]);
+    let lw = 0; yl.each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+    const L = Math.ceil(lw) + 14;
+    yl.attr('x', 0).attr('y', (k) => y(LOC[k]) + 4);
+    const x = d3.scaleTime().domain([w0, w1]).range([L, W - R]);
+    const days = d3.timeDay.range(w0, w1), dw = (W - R - L) / span, tk = d3.timeFormat('%Y-%m-%d'), todayKey = tk(new Date());
+    svg.append('g').selectAll('rect').data(days).join('rect').attr('x', (d) => x(d)).attr('y', T - 6).attr('width', dw).attr('height', H - B - T + 6)
+      .style('fill', (d) => (tk(d) === todayKey ? 'var(--oktl-accent)' : (d.getDay() === 0 || d.getDay() === 6 ? 'var(--cds-chart-grid)' : 'transparent'))).style('opacity', (d) => (tk(d) === todayKey ? 0.08 : 0.3));
+    svg.append('g').selectAll('line').data(days.concat([w1])).join('line').attr('x1', (d) => x(d)).attr('x2', (d) => x(d)).attr('y1', T - 6).attr('y2', H - B).style('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('line').data(LOCS).join('line').attr('x1', L).attr('x2', W - R).attr('y1', (k) => y(LOC[k])).attr('y2', (k) => y(LOC[k])).style('stroke', 'var(--color-border-line)').style('stroke-width', 1.5);
+    const every = dw < 12 ? 7 : dw < 34 ? 2 : 1, labs = days.filter((d, i) => i % every === 0);
+    svg.append('g').selectAll('text').data(labs).join('text').attr('x', (d) => x(d) + dw * every / 2).attr('y', H - B + 15).attr('text-anchor', 'middle').style('font-weight', (d) => (tk(d) === todayKey ? 700 : 400)).style('fill', (d) => (tk(d) === todayKey ? 'var(--oktl-accent)' : null)).text((d) => d3.timeFormat('%a')(d));
+    svg.append('g').selectAll('text').data(labs).join('text').attr('x', (d) => x(d) + dw * every / 2).attr('y', H - B + 30).attr('text-anchor', 'middle').text((d) => d3.timeFormat('%-d/%-m')(d));
+    svg.append('clipPath').attr('id', 'motion-clip').append('rect').attr('x', L).attr('y', 0).attr('width', W - R - L).attr('height', H);
+    const vis = segs.filter((s) => s.e > w0 && s.s < w1 && inView(s)), g = svg.append('g').attr('clip-path', 'url(#motion-clip)');
+    const yy = (s, t) => { const a = LOC[s.la], b = LOC[s.lb]; return y(a + (b - a) * ((t - s.s) / (s.e - s.s))); };
+    g.selectAll('line.s').data(vis).join('line').attr('class', 's').attr('x1', (s) => x(s.s)).attr('y1', (s) => y(LOC[s.la])).attr('x2', (s) => x(s.e)).attr('y2', (s) => y(LOC[s.lb]))
+      .style('stroke', (s) => VCOL[s.v] || 'var(--color-fg)').style('stroke-width', (s) => (s.kind === 'port' ? (big ? 4 : 5) : (big ? 1.6 : 2.5))).style('stroke-linecap', 'round').style('stroke-dasharray', (s) => (s.kind === 'empty' ? '6 4' : null)).style('opacity', (s) => (s.kind === 'port' ? 0.55 : 1));
+    const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; st.box.appendChild(tip);
+    g.selectAll('line.h').data(vis).join('line').attr('class', 'h').attr('x1', (s) => x(s.s)).attr('y1', (s) => y(LOC[s.la])).attr('x2', (s) => x(s.e)).attr('y2', (s) => y(LOC[s.lb])).style('stroke', 'transparent').style('stroke-width', 14).style('cursor', 'pointer')
+      .on('pointermove', (ev, s) => tipAt(tip, st.box, ev, [s.v, s.leg, fmtT(iso(s.s)) + ' → ' + fmtT(iso(s.e))].concat(s.cfo ? [fmtL(s.cfo) + ' L'] : [])))
+      .on('pointerleave', () => { tip.style.display = 'none'; });
+    const now = new Date();
+    if (now >= w0 && now < w1) {
+      svg.append('line').attr('x1', x(now)).attr('x2', x(now)).attr('y1', T - 6).attr('y2', H - B).style('stroke', 'var(--oktl-accent)').style('stroke-width', 2);
+      const pos = d3.rollups(segs.filter((s) => s.s <= now && s.e > now && inView(s)), (a) => a[0], (s) => s.v).map(([v, s]) => ({v, yv: yy(s, now)}));
+      svg.append('g').selectAll('circle').data(pos).join('circle').attr('cx', x(now)).attr('cy', (p) => p.yv).attr('r', 5).style('fill', (p) => VCOL[p.v] || 'var(--color-fg)').style('stroke', '#fff').style('stroke-width', 1.5);
+    }
+  }
+});
+
+dash.draw('amigoChart', (el) => {
+  if (notReady(el, 'amigo', 'amigoset')) return;
+  const rows = dash.data('amigo').data.map((d) => ({t: parseT(d.Date), stock: Number(d['Closing stock (L)']) || 0, out: Number(d['Trucked out (L)']) || 0, inn: Number(d['CFO in from Fly (L)']) || 0, fly: d['Fly vessels arriving']})).filter((d) => d.t);
+  const capRow = dash.data('amigoset').data.find((x) => x.Item === 'Amigo 1 capacity (L)'), cap = capRow ? Number(capRow.Value) : null;
+  el.replaceChildren();
+  if (!rows.length) { el.textContent = 'No days in the schedule'; return; }
+  const W = Math.max(280, el.clientWidth), H = 240, T = 14, B = 24, R = 8;
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+  const yS = d3.scaleLinear().domain([0, Math.max(cap || 0, d3.max(rows, (d) => Math.max(d.stock, d.out))) * 1.08]).nice().range([H - B, T]);
+  const gy = svg.append('g').call(d3.axisLeft(yS).ticks(5).tickFormat((v) => (v / 1e6).toFixed(1) + 'M'));
+  let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+  const L = Math.ceil(lw) + 10;
+  gy.attr('transform', `translate(${L},0)`); gy.select('.domain').remove(); gy.selectAll('line').attr('x2', W - L - R).style('stroke', 'var(--cds-chart-grid)');
+  const x = d3.scaleTime().domain([rows[0].t, d3.timeDay.offset(rows[rows.length - 1].t, 1)]).range([L, W - R]), bw = Math.max(1, (W - L - R) / rows.length - 1);
+  const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - L) / 80))).tickFormat(d3.timeFormat('%d %b')).tickSizeOuter(0));
+  gx.selectAll('path,line').style('stroke', 'var(--cds-chart-axis)');
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw).attr('y', (d) => yS(d.out)).attr('height', (d) => yS(0) - yS(d.out)).style('fill', OKTL[1]).style('opacity', 0.75);
+  svg.append('path').datum(rows).attr('d', d3.line().x((d) => x(d.t) + bw / 2).y((d) => yS(d.stock))).style('fill', 'none').style('stroke', OKTL[0]).style('stroke-width', 2.5);
+  if (cap) { svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', yS(cap)).attr('y2', yS(cap)).style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 3'); svg.append('text').attr('x', W - R).attr('y', yS(cap) - 4).attr('text-anchor', 'end').text('Capacity ' + fmtL(cap) + ' L'); }
+  const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw + 1).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
+    .on('pointermove', (ev, d) => tipAt(tip, el, ev, [fmtD(d.t), 'In from Fly: ' + fmtL(d.inn) + ' L', 'Trucked out: ' + fmtL(d.out) + ' L', 'Closing stock: ' + fmtL(d.stock) + ' L'].concat(d.fly ? ['Arriving: ' + d.fly] : [])))
+    .on('pointerleave', () => { tip.style.display = 'none'; });
+});
+
+dash.draw('siteChart', (el) => {
+  if (notReady(el, 'site')) return;
+  const rows = dash.data('site').data.map((d) => ({t: parseT(d.Date), stock: Number(d['Closing stock (L)']) || 0, rv: Number(d['River arrivals (L)']) || 0, tr: Number(d['Truck arrivals (L)']) || 0, use: Number(d['Site use (L)']) || 0, st: d.Status})).filter((d) => d.t);
+  el.replaceChildren();
+  if (!rows.length) { el.textContent = 'No days in the schedule'; return; }
+  const day = d3.max(rows, (d) => d.use) || 0;
+  const W = Math.max(280, el.clientWidth), H = 240, T = 14, B = 24, R = 8;
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+  const yS = d3.scaleLinear().domain([Math.min(0, d3.min(rows, (d) => d.stock)), Math.max(day * 2, d3.max(rows, (d) => d.stock)) * 1.05]).nice().range([H - B, T]);
+  const gy = svg.append('g').call(d3.axisLeft(yS).ticks(5).tickFormat((v) => (v / 1e6).toFixed(1) + 'M'));
+  let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+  const L = Math.ceil(lw) + 10;
+  gy.attr('transform', `translate(${L},0)`); gy.select('.domain').remove(); gy.selectAll('line').attr('x2', W - L - R).style('stroke', 'var(--cds-chart-grid)');
+  const x = d3.scaleTime().domain([rows[0].t, d3.timeDay.offset(rows[rows.length - 1].t, 1)]).range([L, W - R]), bw = Math.max(1, (W - L - R) / rows.length - 1);
+  const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - L) / 80))).tickFormat(d3.timeFormat('%d %b')).tickSizeOuter(0));
+  gx.selectAll('path,line').style('stroke', 'var(--cds-chart-axis)');
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw).attr('y', (d) => Math.min(yS(d.stock), yS(0))).attr('height', (d) => Math.abs(yS(d.stock) - yS(0))).style('fill', (d) => (d.stock < 0 ? 'var(--cds-chart-status-critical)' : d.stock < day ? OKTL[1] : OKTL[0])).style('opacity', 0.9);
+  if (day) { svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', yS(day)).attr('y2', yS(day)).style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 3'); svg.append('text').attr('x', W - R).attr('y', yS(day) - 4).attr('text-anchor', 'end').text('1 day of site use ' + fmtL(day) + ' L'); }
+  const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw + 1).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
+    .on('pointermove', (ev, d) => tipAt(tip, el, ev, [fmtD(d.t), 'River in: ' + fmtL(d.rv) + ' L', 'Trucks in: ' + fmtL(d.tr) + ' L', 'Site use: ' + fmtL(d.use) + ' L', 'Closing stock: ' + fmtL(d.stock) + ' L (' + (day ? (d.stock / day).toFixed(1) : '—') + ' days)']))
+    .on('pointerleave', () => { tip.style.display = 'none'; });
+});
+
+const tds = (tr, cells) => cells.forEach(([v, cls]) => { const td = document.createElement('td'); td.textContent = v == null || v === '' ? '—' : v; if (cls) td.className = cls; tr.appendChild(td); });
+dash.draw('fleetRows', (tb) => {
+  const r = dash.data('fleet'); tb.replaceChildren(); if (r.status !== 'ok') return;
+  r.data.forEach((d) => { const tr = document.createElement('tr'); tds(tr, [[d.Vessel], [d.Route], [d['CFO per voyage (L)'] == null ? null : fmtL(d['CFO per voyage (L)']), 'num'], [d['Last known event'] || 'TBC'], [d['Event date & time'] ? fmtT(d['Event date & time']) : null], [d.Notes, 'wrap']]); tb.appendChild(tr); });
+});
+
+const svaRowsOf = () => {
+  const s = dash.data('sva'); if (s.status !== 'ok') return null;
+  let cs = 0, ca = 0, last = -1;
+  const rows = s.data.map((d, i) => {
+    const sr = Number(d['Scheduled by river (L)']) || 0, st = Number(d['Scheduled by truck (L)']) || 0;
+    const ar = d['Actual by river (L)'], at = d['Actual by truck (L)'];
+    const has = ar != null || at != null, act = has ? (Number(ar) || 0) + (Number(at) || 0) : null;
+    cs += sr + st; if (has) { ca += act; last = i; }
+    return {t: parseT(d.Date), sch: sr + st, sr, st, ar, at, act, cs, ca: has ? ca : null};
+  }).filter((d) => d.t);
+  return {rows, last};
+};
+const sgn = (v) => (v >= 0 ? '+' : '−') + fmtL(Math.abs(v));
+dash.draw('svaTxt', (el) => {
+  const o = svaRowsOf(); if (!o) { el.textContent = '—'; return; }
+  const r = o.rows[o.last];
+  el.textContent = r ? 'To ' + fmtD(r.t) + ': ' + fmtL(r.ca) + ' L delivered against ' + fmtL(r.cs) + ' L scheduled (' + sgn(r.ca - r.cs) + ' L).' : 'No actuals entered yet.';
+});
+dash.draw('svaChart', (el) => {
+  if (notReady(el, 'sva')) return;
+  const rows = svaRowsOf().rows; el.replaceChildren();
+  if (!rows.length) { el.textContent = 'No days in the baseline'; return; }
+  const W = Math.max(300, el.clientWidth), H = 300, T = 16, B = 26, R = 56;
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+  const y = d3.scaleLinear().domain([0, d3.max(rows, (d) => Math.max(d.sch, d.act || 0)) * 1.12 || 1]).nice().range([H - B, T]);
+  const yc = d3.scaleLinear().domain([0, d3.max(rows, (d) => Math.max(d.cs, d.ca || 0)) * 1.05 || 1]).nice().range([H - B, T]);
+  const gy = svg.append('g').call(d3.axisLeft(y).ticks(5).tickFormat((v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : (v / 1e3).toFixed(0) + 'k')));
+  let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+  const L = Math.ceil(lw) + 10;
+  gy.attr('transform', `translate(${L},0)`); gy.select('.domain').remove(); gy.selectAll('line').attr('x2', W - L - R).style('stroke', 'var(--cds-chart-grid)');
+  const gr = svg.append('g').attr('transform', `translate(${W - R + 6},0)`).call(d3.axisRight(yc).ticks(5).tickFormat((v) => (v / 1e6).toFixed(0) + 'M cum.'));
+  gr.select('.domain').remove(); gr.selectAll('line').remove();
+  const x = d3.scaleBand().domain(rows.map((d) => +d.t)).range([L, W - R]).padding(0.15), bw = x.bandwidth() / 2;
+  const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(d3.axisBottom(x).tickValues(rows.filter((d, i) => i % 7 === 0).map((d) => +d.t)).tickFormat((v) => d3.timeFormat('%d %b')(new Date(v))).tickSizeOuter(0));
+  gx.selectAll('path,line').style('stroke', 'var(--cds-chart-axis)');
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(+d.t)).attr('width', bw).attr('y', (d) => y(d.sch)).attr('height', (d) => y(0) - y(d.sch)).style('fill', '#cfcfcf');
+  svg.append('g').selectAll('rect').data(rows.filter((d) => d.act != null)).join('rect').attr('x', (d) => x(+d.t) + bw).attr('width', bw).attr('y', (d) => y(d.act)).attr('height', (d) => y(0) - y(d.act)).style('fill', OKTL[0]);
+  const cx = (d) => x(+d.t) + x.bandwidth() / 2;
+  svg.append('path').datum(rows).attr('d', d3.line().x(cx).y((d) => yc(d.cs))).style('fill', 'none').style('stroke', '#5c5c5c').style('stroke-width', 2);
+  const done = rows.filter((d) => d.ca != null);
+  if (done.length) { svg.append('path').datum(done).attr('d', d3.line().x(cx).y((d) => yc(d.ca))).style('fill', 'none').style('stroke', OKTL[0]).style('stroke-width', 2.5); svg.append('g').selectAll('circle').data(done).join('circle').attr('cx', cx).attr('cy', (d) => yc(d.ca)).attr('r', 3).style('fill', OKTL[0]); }
+  const nr = rows.find((d) => +d.t === +d3.timeDay.floor(new Date()));
+  if (nr) svg.append('line').attr('x1', cx(nr)).attr('x2', cx(nr)).attr('y1', T).attr('y2', H - B).style('stroke', 'var(--oktl-accent)').style('stroke-dasharray', '3 3');
+  const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(+d.t)).attr('width', x.step()).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
+    .on('pointermove', (ev, d) => tipAt(tip, el, ev, [d3.timeFormat('%A %-d %B')(d.t), 'Scheduled: ' + fmtL(d.sch) + ' L (river ' + fmtL(d.sr) + ', truck ' + fmtL(d.st) + ')', d.act == null ? 'Actual: not entered yet' : 'Actual: ' + fmtL(d.act) + ' L (' + sgn(d.act - d.sch) + ')', 'Cumulative scheduled: ' + fmtL(d.cs) + ' L'].concat(d.ca != null ? ['Cumulative actual: ' + fmtL(d.ca) + ' L'] : [])))
+    .on('pointerleave', () => { tip.style.display = 'none'; });
+});
+dash.draw('svaRows', (tb) => {
+  const o = svaRowsOf(); tb.replaceChildren(); if (!o) return;
+  o.rows.forEach((d) => {
+    const tr = document.createElement('tr'); if (d.act == null) tr.className = 'past';
+    tds(tr, [[fmtD(d.t)], [fmtL(d.sch), 'num'], [d.ar == null ? null : fmtL(d.ar), 'num'], [d.at == null ? null : fmtL(d.at), 'num'], [d.act == null ? null : fmtL(d.act), 'num'], [d.act == null ? null : sgn(d.act - d.sch), 'num'], [d.ca == null ? null : sgn(d.ca - d.cs), 'num']]);
+    tb.appendChild(tr);
+  });
+});
+
+dash.start();
+</script>
+</body>
+</html>
