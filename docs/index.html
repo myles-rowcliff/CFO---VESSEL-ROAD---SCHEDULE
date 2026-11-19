@@ -518,7 +518,13 @@ dash.draw('motion', {
       const ret = parseT(d['ETA Aiambak (return)']), aa = ret && toPom ? d3.timeHour.offset(ret, -96) : ret;
       const ek = parseT(d['ETA Kiunga']), depK = ek && ret ? d3.timeHour.offset(ek, 12) : null;
       const vc = from === 'POM' ? VAR : null;
-      if (/one-off trip from Aiambak/.test(d['Loaded from'] || '')) seg(d.Vessel, iso(d3.timeHour.offset(parseT(d['Load start']), -96)), 'AIA', d['Load start'], 'POM', 'empty', 'Aiambak → POM (empty, one-off trip)', null, VAR);
+      if (/one-off trip from Aiambak/.test(d['Loaded from'] || '')) {
+        const lv = iso(d3.timeHour.offset(parseT(d['Load start']), -96));
+        seg(d.Vessel, lv, 'AIA', d['Load start'], 'POM', 'empty', 'Aiambak → POM (empty, one-off trip)', null, VAR);
+        // Aiambak – Kiunga view: POM is off the chart, so show the time away as a dotted line along Aiambak
+        seg(d.Vessel, lv, 'AIA', iso(d3.timeHour.offset(parseT(d.Depart), 96)), 'AIA', 'away', 'Away on one-off trip to POM – loads at POM ' + fmtT(d['Load start']) + ', passes Aiambak ' + fmtT(iso(d3.timeHour.offset(parseT(d.Depart), 96))) + ' laden for Kiunga', d['CFO (L)'], VAR);
+        segs[segs.length - 1].only = 'ak';
+      }
       seg(d.Vessel, d['Load start'], from, d.Depart, from, 'port', from === 'POM' ? 'Loading CFO at POM (one-off trip)' : 'Loading CFO' + (d['Loaded from'] ? ' from ' + d['Loaded from'] : ''), d['CFO (L)'], vc);
       if (from === 'POM') {  // passes Aiambak on the way, so the Aiambak → Kiunga view still shows the leg
         const pa = iso(d3.timeHour.offset(parseT(d.Depart), 96));
@@ -535,7 +541,7 @@ dash.draw('motion', {
     const view = st.view || 'all';
     on(st.vAll, view === 'all'); on(st.vPA, view === 'pa'); on(st.vAK, view === 'ak');
     const LOCS = view === 'pa' ? ['POM', 'AIA'] : view === 'ak' ? ['AIA', 'KIU'] : ['POM', 'AIA', 'KIU'];
-    const inView = (s) => LOCS.includes(s.la) && LOCS.includes(s.lb);
+    const inView = (s) => (!s.only || s.only === view) && LOCS.includes(s.la) && LOCS.includes(s.lb);
     st.prev.textContent = big ? '‹ Previous 8 weeks' : '‹ Previous 2 weeks'; st.next.textContent = big ? 'Next 8 weeks ›' : 'Next 2 weeks ›';
     const minOff = Math.floor((d3.min(segs, (s) => s.s) - today0) / (span * 864e5)), maxOff = Math.floor((d3.max(segs, (s) => s.e) - today0) / (span * 864e5));
     st.off = Math.max(minOff, Math.min(maxOff, st.off));
@@ -561,10 +567,12 @@ dash.draw('motion', {
     svg.append('clipPath').attr('id', 'motion-clip').append('rect').attr('x', L).attr('y', 0).attr('width', W - R - L).attr('height', H);
     const vis = segs.filter((s) => s.e > w0 && s.s < w1 && inView(s)), g = svg.append('g').attr('clip-path', 'url(#motion-clip)');
     const yy = (s, t) => { const a = LOC[s.la], b = LOC[s.lb]; return y(a + (b - a) * ((t - s.s) / (s.e - s.s))); };
-    g.selectAll('line.s').data(vis).join('line').attr('class', 's').attr('x1', (s) => x(s.s)).attr('y1', (s) => y(LOC[s.la])).attr('x2', (s) => x(s.e)).attr('y2', (s) => y(LOC[s.lb]))
-      .style('stroke', (s) => s.col || VCOL[s.v] || 'var(--color-fg)').style('stroke-width', (s) => (s.kind === 'port' ? (big ? 4 : 5) : (big ? 1.6 : 2.5))).style('stroke-linecap', 'round').style('stroke-dasharray', (s) => (s.kind === 'empty' ? '6 4' : null)).style('opacity', (s) => (s.kind === 'port' ? 0.55 : 1));
+    const off = (s) => (s.kind === 'away' ? -14 : 0);
+    g.selectAll('line.s').data(vis).join('line').attr('class', 's').attr('x1', (s) => x(s.s)).attr('y1', (s) => y(LOC[s.la]) + off(s)).attr('x2', (s) => x(s.e)).attr('y2', (s) => y(LOC[s.lb]) + off(s))
+      .style('stroke', (s) => s.col || VCOL[s.v] || 'var(--color-fg)').style('stroke-width', (s) => (s.kind === 'port' ? (big ? 4 : 5) : (big ? 1.6 : 2.5))).style('stroke-linecap', 'round').style('stroke-dasharray', (s) => (s.kind === 'empty' ? '6 4' : s.kind === 'away' ? '2 5' : null)).style('opacity', (s) => (s.kind === 'port' ? 0.55 : 1));
+    g.selectAll('text.away').data(vis.filter((s) => s.kind === 'away')).join('text').attr('class', 'away').attr('x', (s) => Math.max(L + 4, x(s.s)) + 4).attr('y', (s) => y(LOC[s.la]) - 20).style('fill', (s) => s.col).style('font-weight', 600).text((s) => s.v + ' – away on trip to POM');
     const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; st.box.appendChild(tip);
-    g.selectAll('line.h').data(vis).join('line').attr('class', 'h').attr('x1', (s) => x(s.s)).attr('y1', (s) => y(LOC[s.la])).attr('x2', (s) => x(s.e)).attr('y2', (s) => y(LOC[s.lb])).style('stroke', 'transparent').style('stroke-width', 14).style('cursor', 'pointer')
+    g.selectAll('line.h').data(vis).join('line').attr('class', 'h').attr('x1', (s) => x(s.s)).attr('y1', (s) => y(LOC[s.la]) + off(s)).attr('x2', (s) => x(s.e)).attr('y2', (s) => y(LOC[s.lb]) + off(s)).style('stroke', 'transparent').style('stroke-width', 14).style('cursor', 'pointer')
       .on('pointermove', (ev, s) => tipAt(tip, st.box, ev, [s.v, s.leg, fmtT(iso(s.s)) + ' → ' + fmtT(iso(s.e))].concat(s.cfo ? [fmtL(s.cfo) + ' L'] : [])))
       .on('pointerleave', () => { tip.style.display = 'none'; });
     const now = new Date();
