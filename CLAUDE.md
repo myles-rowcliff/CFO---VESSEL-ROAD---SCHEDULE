@@ -12,7 +12,7 @@ The owner is Myles (OKTL). The master copies of the schedule Sheet, the internal
 
 | Path | Contents |
 | --- | --- |
-| `docs/index.html` | The website: an interactive dashboard (Overview, Scheduled vs actual, Time & motion, Site fuel, Amigo 1, Fleet, Summary). The Summary text is inline in `<section id="summary">`. |
+| `docs/index.html` | The website: an interactive dashboard (Overview, Scheduled vs actual, Time & motion, Site fuel, Amigo 1, Summary). The Fleet tab is hidden (Myles, 19 Nov 2026) but `fleet.json` is still kept up to date. The Summary tab has Daily / Weekly / Fortnightly / Overall buttons: the first three are worked out in the page from the data files; Overall is the written text inline in `<div id="sumOverall">`. |
 | `docs/data/*.json` | Website data: `fly`, `river`, `amigo`, `site` (generated), `fleet`, `amigoset`, `sva`, `meta` (edited by hand). |
 | `docs/d3.min.js`, `docs/logo.png`, `docs/.nojekyll` | Bundled so the site needs nothing from outside. |
 | `engine/engine.py` | Hour-by-hour simulation of every vessel and truck. Reads `params.json` (or the `PFILE` env var) and writes `engine_out.json` to the current folder. |

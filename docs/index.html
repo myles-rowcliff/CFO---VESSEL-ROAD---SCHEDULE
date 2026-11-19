@@ -65,6 +65,7 @@ body { margin: 0; background: var(--color-page); color: var(--color-fg); }
 .cfo-sumtext h3 { font-size: 15px; font-weight: 700; margin: 18px 0 6px; }
 .cfo-sumtext ul { margin: 6px 0 10px; padding-left: 20px; }
 .cfo-sumtext li { margin: 4px 0; }
+.cfo-sumtext .cfo-sub { font-size: var(--cds-font-size-caption); }
 details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); font-size: 14px; }
 .cfo-err { color: var(--cds-chart-status-critical); }
 @media print { .cfo-tabs { display: none; } }
@@ -84,7 +85,6 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <button type="button" class="cfo-tab" role="tab" data-tab="motion" aria-selected="false">Time &amp; motion</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="site" aria-selected="false">Site fuel</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="amigo" aria-selected="false">Amigo 1</button>
-<button type="button" class="cfo-tab" role="tab" data-tab="fleet" aria-selected="false">Fleet</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="summary" aria-selected="false">Summary</button>
 </nav>
 
@@ -135,13 +135,16 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <div class="cfo-chart" data-draw="amigoChart" style="min-height:240px"></div>
 </section>
 
-<section id="fleet" class="cfo-card cfo-page" role="tabpanel" hidden>
+<section id="fleet" class="cfo-card" hidden>
 <h2>Fleet positions</h2>
 <p class="cfo-sub">Last known event for each vessel.</p>
 <div class="cfo-tw"><table class="cfo-table"><thead><tr><th>Vessel</th><th>Route</th><th class="num">CFO per voyage (L)</th><th>Last known event</th><th>Date &amp; time</th><th>Notes</th></tr></thead><tbody data-draw="fleetRows"></tbody></table></div>
 </section>
 
 <section id="summary" class="cfo-card cfo-page" role="tabpanel" hidden>
+<div class="cfo-weeknav" data-draw="sumNav"></div>
+<div data-draw="sumPeriod" class="cfo-sumtext" hidden></div>
+<div id="sumOverall">
 <h2>Summary – CFO supply plan to Kiunga, 19 Nov 2026 to 13 Jan 2027</h2>
 <p class="cfo-sub">Prepared by Myles Rowcliff, OKTL.</p>
 <div class="cfo-sumtext">
@@ -173,6 +176,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <li><b>Road:</b> if the road closes, Kiunga relies on Elimbari alone, about 1 ML a week – well under site use over a long closure.</li>
 <li><b>Fly vessel waiting:</b> about 79 hours in total over 8 weeks while Amigo 1 is full.</li>
 </ul>
+</div>
 </div>
 </section>
 
@@ -645,6 +649,95 @@ dash.draw('svaRows', (tb) => {
     tds(tr, [[fmtD(d.t)], [fmtL(d.sch), 'num'], [d.ar == null ? null : fmtL(d.ar), 'num'], [d.at == null ? null : fmtL(d.at), 'num'], [d.act == null ? null : fmtL(d.act), 'num'], [d.act == null ? null : sgn(d.act - d.sch), 'num'], [d.ca == null ? null : sgn(d.ca - d.cs), 'num']]);
     tb.appendChild(tr);
   });
+});
+
+
+/* Summary: Daily / Weekly / Fortnightly / Overall */
+const SUM = {mode: 'all', off: 0};
+const fmtDs = d3.timeFormat('%a %-d %b');
+const SUMN = {day: 1, week: 7, fort: 14};
+const SUMLBL = {day: 'Daily', week: 'Weekly', fort: 'Fortnightly', all: 'Overall'};
+const SUMSTEP = {day: 'day', week: 'week', fort: 'fortnight'};
+const dayKey = d3.timeFormat('%Y-%m-%d');
+const sumRange = () => {
+  const s = dash.data('site'); if (s.status !== 'ok' || !s.data.length) return null;
+  const first = parseT(s.data[0].Date), last = parseT(s.data[s.data.length - 1].Date);
+  let t0 = d3.timeDay.floor(new Date()); if (t0 < first) t0 = first; if (t0 > last) t0 = last;
+  const n = SUMN[SUM.mode], a = d3.timeDay.offset(t0, SUM.off * n), b = d3.timeDay.offset(a, n);
+  return {a, b, first, last};
+};
+dash.draw('sumNav', (el) => {
+  el.replaceChildren();
+  const mk = (t, on, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.addEventListener('click', fn); if (on) { b.style.background = 'var(--oktl-accent)'; b.style.color = '#fff'; b.style.borderColor = 'var(--oktl-accent)'; } b.setAttribute('aria-pressed', on ? 'true' : 'false'); el.appendChild(b); return b; };
+  ['day', 'week', 'fort', 'all'].forEach((m) => mk(SUMLBL[m], SUM.mode === m, () => { SUM.mode = m; SUM.off = 0; dash.draw('sumNav'); dash.draw('sumPeriod'); }));
+  if (SUM.mode === 'all') return;
+  const sp = document.createElement('span'); sp.style.width = '10px'; el.appendChild(sp);
+  const r = sumRange();
+  const pv = mk('‹ Previous ' + SUMSTEP[SUM.mode], false, () => { SUM.off -= 1; dash.draw('sumNav'); dash.draw('sumPeriod'); });
+  mk('Today', false, () => { SUM.off = 0; dash.draw('sumNav'); dash.draw('sumPeriod'); });
+  const nx = mk('Next ' + SUMSTEP[SUM.mode] + ' ›', false, () => { SUM.off += 1; dash.draw('sumNav'); dash.draw('sumPeriod'); });
+  if (r) { pv.disabled = r.a <= r.first; nx.disabled = r.b > r.last; }
+});
+dash.draw('sumPeriod', (el) => {
+  const all = document.getElementById('sumOverall');
+  if (SUM.mode === 'all') { el.hidden = true; all.hidden = false; return; }
+  el.hidden = false; all.hidden = true; el.replaceChildren();
+  if (notReady(el, 'site', 'fly', 'river', 'amigo', 'sva')) return;
+  const r = sumRange(); const {a, b} = r, n = SUMN[SUM.mode];
+  const inP = (v) => { const t = parseT(v); return t && t >= a && t < b; };
+  const L = (v) => fmtL(Math.round(Number(v) || 0)) + ' L';
+  const tm = (v) => d3.timeFormat('%-I %p %a %-d %b')(parseT(v));
+  const lastDay = d3.timeDay.offset(b, -1);
+  const label = n === 1 ? d3.timeFormat('%A %-d %B %Y')(a) : d3.timeFormat('%-d %b')(a) + ' – ' + d3.timeFormat('%-d %b %Y')(lastDay);
+  const add = (tag, html, cls) => { const e = document.createElement(tag); e.innerHTML = html; if (cls) e.className = cls; el.appendChild(e); return e; };
+  const list = (title, items, empty) => { add('h3', title); if (!items.length) { add('p', empty, 'cfo-sub'); return; } const ul = add('ul', ''); items.forEach((t) => { const li = document.createElement('li'); li.innerHTML = t; ul.appendChild(li); }); };
+  const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+  add('h2', 'Summary – ' + SUMLBL[SUM.mode].toLowerCase() + ', ' + esc(label));
+  add('p', 'Worked out from the current schedule' + (row0('meta') ? ' (data updated ' + d3.timeFormat('%-d %b, %-I:%M %p')(parseT(row0('meta').updated)) + ')' : '') + '. Times are PNG time.', 'cfo-sub');
+  const site = dash.data('site').data, days = site.filter((d) => inP(d.Date));
+  if (!days.length) { add('p', 'No schedule data for this period.'); return; }
+  const sum = (rows, k) => rows.reduce((t, d) => t + (Number(d[k]) || 0), 0);
+  const rv = sum(days, 'River arrivals (L)'), tr = sum(days, 'Truck arrivals (L)'), use = sum(days, 'Site use (L)');
+  const i0 = site.indexOf(days[0]), open = i0 > 0 ? Number(site[i0 - 1]['Closing stock (L)']) : null;
+  const end = days[days.length - 1], low = days.reduce((m, d) => (Number(d['Lowest during day (L)']) < Number(m['Lowest during day (L)']) ? d : m));
+  const perDay = Number(days[0]['Site use (L)']) || 350000;
+  add('p', '<b>' + L(rv + tr) + ' reaches Kiunga (' + L(rv) + ' by river, ' + L(tr) + ' by truck) against ' + L(use) + ' of site use – ' + ((rv + tr) >= use ? 'a gain of ' + L(rv + tr - use) : 'a draw-down of ' + L(use - rv - tr)) + '.</b>');
+  const st = [];
+  st.push('<b>Site stock:</b> ' + (open != null ? L(open) + ' at the start, ' : '') + L(end['Closing stock (L)']) + ' at the end of ' + fmtDs(parseT(end.Date)) + ' (' + (Number(end['Days of fuel']) || 0).toFixed(1) + ' days of use). Lowest ' + L(low['Lowest during day (L)']) + ' on ' + fmtDs(parseT(low.Date)) + ' (' + ((Number(low['Lowest during day (L)']) || 0) / perDay).toFixed(1) + ' days of use).');
+  const sva = dash.data('sva').data.filter((d) => inP(d.Date));
+  if (sva.length) {
+    const sch = sum(sva, 'Scheduled by river (L)') + sum(sva, 'Scheduled by truck (L)');
+    const got = sva.filter((d) => d['Actual by river (L)'] != null || d['Actual by truck (L)'] != null);
+    let t = '<b>Against the locked plan:</b> ' + L(sch) + ' scheduled to reach Kiunga.';
+    if (got.length) { const act = sum(got, 'Actual by river (L)') + sum(got, 'Actual by truck (L)'), sc2 = sum(got, 'Scheduled by river (L)') + sum(got, 'Scheduled by truck (L)'); t += ' Actuals entered for ' + got.length + ' of ' + sva.length + ' day' + (sva.length > 1 ? 's' : '') + ': ' + L(act) + ' against ' + L(sc2) + ' scheduled for those days (' + (act >= sc2 ? '+' : '−') + L(Math.abs(act - sc2)) + ').'; }
+    else t += ' No actuals entered yet.';
+    st.push(t);
+  }
+  const am = dash.data('amigo').data.filter((d) => inP(d.Date));
+  if (am.length) {
+    const ae = am[am.length - 1], wait = Number(ae['Waiting aboard Fly vessels (L)']) || 0;
+    st.push('<b>Amigo 1:</b> ' + L(sum(am, 'CFO in from Fly (L)')) + ' in, ' + L(sum(am, 'Trucked out (L)')) + ' trucked out; ' + L(ae['Closing stock (L)']) + ' in store at the end of ' + fmtDs(parseT(ae.Date)) + (wait ? ', with ' + L(wait) + ' still waiting aboard Fly vessels' : '') + '.');
+  }
+  const ul = add('ul', ''); st.forEach((t) => { const li = document.createElement('li'); li.innerHTML = t; ul.appendChild(li); });
+  const ev = [];
+  dash.data('fly').data.forEach((f) => {
+    const v = '<b>' + esc(f.Vessel) + '</b>';
+    if (inP(f['Load start POM'])) ev.push([f['Load start POM'], v + ' starts loading ' + L(f['CFO (L)']) + ' at POM.']);
+    if (inP(f['ETA Aiambak'])) { const w = Number(f['Extra wait at Aiambak (h)']) || 0; ev.push([f['ETA Aiambak'], v + ' reaches Aiambak with ' + L(f['CFO (L)']) + ' → ' + esc(f['Transferred to'] || 'Amigo 1') + (w ? ' (waits about ' + Math.round(w) + ' h for room in Amigo 1)' : '') + '.']); }
+    if (inP(f['Depart Aiambak (empty)'])) ev.push([f['Depart Aiambak (empty)'], v + ' leaves Aiambak empty for POM.']);
+  });
+  dash.data('river').data.forEach((k) => {
+    const v = '<b>' + esc(k.Vessel) + '</b>', direct = /direct/i.test(k['Loaded from'] || '');
+    if (inP(k.Depart)) ev.push([k.Depart, v + ' leaves Aiambak for Kiunga with ' + L(k['CFO (L)']) + (direct ? ' (direct run)' : ' (from ' + esc(k['Loaded from']) + ')') + '.']);
+    if (inP(k['ETA Kiunga'])) ev.push([k['ETA Kiunga'], v + ' reaches Kiunga with ' + L(k['CFO (L)']) + (direct ? ' (direct run)' : '') + ', 12 h discharging.']);
+  });
+  ev.sort((x, y) => parseT(x[0]) - parseT(y[0]));
+  list('Vessel movements', ev.map(([t, s]) => '<span class="num" style="font-family:var(--oktl-mono);font-size:13px">' + tm(t) + '</span> – ' + s), 'No vessel movements in this period.');
+  const full = 560000;
+  const short = am.filter((d) => d.Date >= '2026-11-20' && (Number(d['Trucked out (L)']) || 0) < full);
+  list('Trucks', [
+    'Trucked out of Amigo 1: ' + L(sum(am, 'Trucked out (L)')) + (am.length ? ' over ' + am.length + ' day' + (am.length > 1 ? 's' : '') : '') + '; truck arrivals at Kiunga ' + L(tr) + '.',
+  ].concat(short.length ? short.map((d) => { const k = Math.round((Number(d['Trucked out (L)']) || 0) / 40000); return '<b>' + fmtDs(parseT(d.Date)) + ':</b> ' + (k ? 'only ' + k + ' trucks (' + L(d['Trucked out (L)']) + ')' : 'no trucks') + ' instead of 14 – Amigo 1 runs short; the rest wait at Aiambak for the next convoy.'; }) : am.some((d) => d.Date >= '2026-11-20') ? ['Full convoys every day' + (am[0].Date < '2026-11-20' ? ' from 20 Nov' : '') + ' (14 trucks, 560,000 L).'] : []), '');
 });
 
 dash.start();
