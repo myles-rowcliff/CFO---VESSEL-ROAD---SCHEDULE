@@ -26,9 +26,14 @@
    "name": "Fly Challenger",
    "cap": 1500000,
    "now": 1200000,
-   "event": "Standby at Aiambak",
-   "date": "2026-11-18T13:00:00",
-   "hold": 0
+   "event": "Passed Aiambak to Kiunga",
+   "date": "2026-11-19T08:00:00",
+   "hold": 0,
+   "t_ak": 3.0,
+   "t_ka": 3.0,
+   "dis_k": 0.5,
+   "depart_aia": true,
+   "since": "2026-11-18T13:00:00"
   },
   {
    "name": "Fly Resilience",

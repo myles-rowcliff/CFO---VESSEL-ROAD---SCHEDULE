@@ -21,9 +21,13 @@ for v in P['fly']:
     elif ev=='Departed POM': f.update(phase='to_aia',t=d+days(TO),cargo=v['now'] or v['cap'],dep=d,ls=d-days(LP))
     elif ev=='Passed Aiambak to Kiunga':
         # Fly vessel sails on past Aiambak and discharges its own cargo at Kiunga, then returns empty to POM
-        k=d+days(TAK); c=v['now'] or v['cap']; dk=v.get('dis_k',DK)
-        f.update(phase='to_pom',t=k+days(dk+TKA+TB),cargo=0)
-        FLYK.append(dict(Vessel=v['name'],at='POM',frm='Own cargo – direct to Kiunga past Aiambak',ls=d-days(TO+LP),dep=d-days(TO),k=k,cfo=c,ret=k+days(dk+TKA+TB),dk=dk))
+        # optional per-vessel: t_ak / t_ka sailing days, depart_aia=True when 'date' is the departure from Aiambak, since = time it arrived at Aiambak
+        k=d+days(v.get('t_ak',TAK)); c=v['now'] or v['cap']; dk=v.get('dis_k',DK); ret=k+days(dk+v.get('t_ka',TKA)+TB)
+        f.update(phase='to_pom',t=ret,cargo=0)
+        if v.get('depart_aia'):
+            FLYK.append(dict(Vessel=v['name'],at='Aiambak',frm='Own cargo – direct to Kiunga, then back to POM',ls=T(v['since']) if v.get('since') else d,dep=d,k=k,cfo=c,ret=ret,dk=dk))
+        else:
+            FLYK.append(dict(Vessel=v['name'],at='POM',frm='Own cargo – direct to Kiunga past Aiambak',ls=d-days(TO+LP),dep=d-days(TO),k=k,cfo=c,ret=ret,dk=dk))
     fly.append(f)
 riv=[]; rrecs=[]
 for v in P['river']:
