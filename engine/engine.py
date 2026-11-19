@@ -53,6 +53,8 @@ hourly=[]; emerg=[]
 for x in FLYK:
     if x['k']>=NOW: n=max(1,round(x['dk']*24)); dis_q.append([x['k'],n,x['cfo']/n])
 def trucks_on(t): return RESTART is None or t>=RESTART
+CLOSED=[(T(a),T(b)) for a,b in P.get('road_closed',[])]  # [[from, to]] road closed: no convoys leave Aiambak; trucks wait and go with the first convoy after
+def road_shut(t): return any(a<=t<b for a,b in CLOSED)
 STEPS=[(T(a),n) for a,n in P.get('truck_steps',[])]
 TSIZE=P.get('truck_size',40000); CH=P.get('convoy_hour',6)
 PRE=[(T(a),l) for a,l in P.get('preloaded',[])]
@@ -221,7 +223,10 @@ while t<END+days(4):
             for h,k in CONV: TRUCKS.extend(dict(home=h,ready=t,missed=False) for _ in range(k))
         for k in TRUCKS:
             if t.hour==k['home'] and k['ready']>t and (k.get('last') is None or t-k['last']>dt.timedelta(hours=12)): k['missed']=True  # not back in time for its own convoy
-        if t.hour in [h for h,k in CONV]:
+        if t.hour in [h for h,k in CONV] and road_shut(t):
+            for k in TRUCKS:
+                if t.hour==k['home'] and k['ready']<=t: k['missed']=True  # held at Aiambak until the road reopens
+        elif t.hour in [h for h,k in CONV]:
             elig=[k for k in TRUCKS if k['ready']<=t and (k['home']==t.hour or k['missed'])]
             elig.sort(key=lambda k:(not k['missed']))
             for k in elig:
