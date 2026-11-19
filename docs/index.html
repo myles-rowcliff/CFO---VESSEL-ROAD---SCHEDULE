@@ -124,8 +124,9 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 
 <section id="site" class="cfo-card cfo-page" role="tabpanel" hidden>
 <h2>Projected site stock – Tabubil</h2>
-<p class="cfo-sub">Projected closing CFO stock on site each day from the current schedule: river and truck arrivals at Kiunga, less 350,000 L a day of site use. Lowest closing stock is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>.</p>
+<p class="cfo-sub">Projected closing CFO stock on site each day from the current schedule: river and truck arrivals at Kiunga, less 350,000 L a day of site use. <span data-draw="siteMinLbl">Lowest closing stock</span> is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>.</p>
 <div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Projected closing site stock</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span></div>
+<div class="cfo-weeknav" data-draw="siteNav"></div>
 <div class="cfo-chart" data-draw="siteChart" style="min-height:240px"></div>
 </section>
 <section id="sitesva" class="cfo-card" hidden>
@@ -292,8 +293,32 @@ put('tKStock', () => { const r = row0('kiunga'); return r && r.todayStockL != nu
 put('tKDays', () => { const r = row0('kiunga'); return r && r.todayDays != null ? r.todayDays.toFixed(1) : null; });
 put('tKWeek', () => { const r = row0('kiunga'); return r && r.next7InL != null ? fmtL(r.next7InL) : null; });
 put('tKNeed', () => { const r = row0('kiunga'); return r && r.next7NeedL != null ? fmtL(r.next7NeedL) : null; });
-put('siteMin', () => { const r = row0('sitekpi'); return r && r.minStock != null ? fmtL(r.minStock) : null; });
-put('siteMinDay', () => { const r = row0('sitekpi'); return r && r.minDay ? fmtD(parseT(r.minDay)) : null; });
+const SF = {mode: 'all', off: 0}, SFN = {week: 7, fort: 14}, SFSTEP = {week: 'week', fort: 'fortnight'};
+const siteRange = () => {
+  const s = dash.data('site'); if (s.status !== 'ok' || !s.data.length || SF.mode === 'all') return null;
+  const first = parseT(s.data[0].Date), last = parseT(s.data[s.data.length - 1].Date);
+  let t0 = d3.timeDay.floor(new Date()); if (t0 < first) t0 = first; if (t0 > last) t0 = last;
+  const a = d3.timeDay.offset(t0, SF.off * SFN[SF.mode]); return {a, b: d3.timeDay.offset(a, SFN[SF.mode]), first, last};
+};
+const siteRows = () => { const s = dash.data('site'); if (s.status !== 'ok') return null; const r = siteRange(); return s.data.filter((d) => { const t = parseT(d.Date); return t && (!r || (t >= r.a && t < r.b)); }); };
+const siteLow = () => { const rows = (siteRows() || []).filter((d) => typeof d['Closing stock (L)'] === 'number'); return rows.length ? rows.reduce((a, b) => (b['Closing stock (L)'] < a['Closing stock (L)'] ? b : a)) : null; };
+put('siteMinLbl', () => (SF.mode === 'all' ? 'Lowest closing stock' : 'Lowest closing stock in the selected ' + SFSTEP[SF.mode]));
+put('siteMin', () => { const r = siteLow(); return r ? fmtL(Math.round(r['Closing stock (L)'])) : null; });
+put('siteMinDay', () => { const r = siteLow(); return r ? fmtD(parseT(r.Date)) : null; });
+const siteRedraw = () => ['siteNav', 'siteChart', 'siteMinLbl', 'siteMin', 'siteMinDay'].forEach((n) => dash.draw(n));
+dash.draw('siteNav', (el) => {
+  el.replaceChildren();
+  const mk = (t, on, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.addEventListener('click', fn); if (on) { b.style.background = 'var(--oktl-accent)'; b.style.color = '#fff'; b.style.borderColor = 'var(--oktl-accent)'; } b.setAttribute('aria-pressed', on ? 'true' : 'false'); el.appendChild(b); return b; };
+  [['week', 'Weekly'], ['fort', 'Fortnightly'], ['all', 'Overall']].forEach(([m, t]) => mk(t, SF.mode === m, () => { SF.mode = m; SF.off = 0; siteRedraw(); }));
+  if (SF.mode === 'all') return;
+  const sp = document.createElement('span'); sp.style.width = '10px'; el.appendChild(sp);
+  const r = siteRange();
+  const pv = mk('‹ Previous ' + SFSTEP[SF.mode], false, () => { SF.off -= 1; siteRedraw(); });
+  mk('Today', false, () => { SF.off = 0; siteRedraw(); });
+  const nx = mk('Next ' + SFSTEP[SF.mode] + ' ›', false, () => { SF.off += 1; siteRedraw(); });
+  const lbl = document.createElement('span'); lbl.className = 'cfo-weeklbl'; el.appendChild(lbl);
+  if (r) { pv.disabled = r.a <= r.first; nx.disabled = r.b > r.last; lbl.textContent = d3.timeFormat('%-d %b')(r.a) + ' – ' + d3.timeFormat('%-d %b')(d3.timeDay.offset(r.b, -1)); }
+});
 
 const cfoShow = (id) => {
   const pages = Array.from(document.querySelectorAll('.cfo-page'));
@@ -576,7 +601,7 @@ dash.draw('amigoChart', (el) => {
 
 dash.draw('siteChart', (el) => {
   if (notReady(el, 'site')) return;
-  const rows = dash.data('site').data.map((d) => ({t: parseT(d.Date), stock: Number(d['Closing stock (L)']) || 0, rv: Number(d['River arrivals (L)']) || 0, tr: Number(d['Truck arrivals (L)']) || 0, use: Number(d['Site use (L)']) || 0, st: d.Status})).filter((d) => d.t);
+  const rows = siteRows().map((d) => ({t: parseT(d.Date), stock: Number(d['Closing stock (L)']) || 0, rv: Number(d['River arrivals (L)']) || 0, tr: Number(d['Truck arrivals (L)']) || 0, use: Number(d['Site use (L)']) || 0, st: d.Status})).filter((d) => d.t);
   el.replaceChildren();
   if (!rows.length) { el.textContent = 'No days in the schedule'; return; }
   const day = d3.max(rows, (d) => d.use) || 0;
@@ -587,10 +612,11 @@ dash.draw('siteChart', (el) => {
   let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
   const L = Math.ceil(lw) + 10;
   gy.attr('transform', `translate(${L},0)`); gy.select('.domain').remove(); gy.selectAll('line').attr('x2', W - L - R).style('stroke', 'var(--cds-chart-grid)');
-  const x = d3.scaleTime().domain([rows[0].t, d3.timeDay.offset(rows[rows.length - 1].t, 1)]).range([L, W - R]), bw = Math.max(1, (W - L - R) / rows.length - 1);
-  const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - L) / 80))).tickFormat(d3.timeFormat('%d %b')).tickSizeOuter(0));
+  const x = d3.scaleTime().domain([rows[0].t, d3.timeDay.offset(rows[rows.length - 1].t, 1)]).range([L, W - R]), gap = rows.length <= 14 ? Math.min(12, (W - L - R) / rows.length * 0.2) : 1, bw = Math.max(1, (W - L - R) / rows.length - gap);
+  const ax = rows.length <= 14 ? d3.axisBottom(x).tickValues(rows.map((d) => d3.timeHour.offset(d.t, 12))).tickFormat(d3.timeFormat('%a %-d %b')) : d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - L) / 80))).tickFormat(d3.timeFormat('%d %b'));
+  const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(ax.tickSizeOuter(0));
   gx.selectAll('path,line').style('stroke', 'var(--cds-chart-axis)');
-  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw).attr('y', (d) => Math.min(yS(d.stock), yS(0))).attr('height', (d) => Math.abs(yS(d.stock) - yS(0))).style('fill', (d) => (d.stock < 0 ? 'var(--cds-chart-status-critical)' : d.stock < day ? OKTL[1] : OKTL[0])).style('opacity', 0.9);
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t) + gap / 2).attr('width', bw).attr('y', (d) => Math.min(yS(d.stock), yS(0))).attr('height', (d) => Math.abs(yS(d.stock) - yS(0))).style('fill', (d) => (d.stock < 0 ? 'var(--cds-chart-status-critical)' : d.stock < day ? OKTL[1] : OKTL[0])).style('opacity', 0.9);
   if (day) { svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', yS(day)).attr('y2', yS(day)).style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 3'); svg.append('text').attr('x', W - R).attr('y', yS(day) - 4).attr('text-anchor', 'end').text('1 day of site use ' + fmtL(day) + ' L'); }
   const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw + 1).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
