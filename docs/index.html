@@ -84,7 +84,6 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <button type="button" class="cfo-tab" role="tab" data-tab="sva" aria-selected="false">Scheduled vs actual</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="motion" aria-selected="false">Time &amp; motion</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="site" aria-selected="false">Site fuel</button>
-<button type="button" class="cfo-tab" role="tab" data-tab="amigo" aria-selected="false">Amigo 1</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="summary" aria-selected="false">Summary</button>
 </nav>
 
@@ -109,9 +108,10 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <section id="sva" class="cfo-card cfo-page" role="tabpanel" hidden>
 <h2>Scheduled vs actual – CFO reaching Kiunga</h2>
 <p class="cfo-sub">Scheduled is the plan locked on 19 Nov 2026, plus any vessel later sent straight from Aiambak to Kiunga (Fly Challenger, 1,200,000 L on 22 Nov); actual is what reached Kiunga. <b data-draw="svaTxt">—</b></p>
-<div class="cfo-legend"><span><i class="cfo-sw" style="background:#cfcfcf"></i>Scheduled (river + truck)</span><span><i class="cfo-sw" data-swatch="0"></i>Actual</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#5c5c5c"></i>Cumulative scheduled</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#d2560b"></i>Cumulative actual</span></div>
+<div class="cfo-legend"><span><i class="cfo-sw" style="background:#cfcfcf"></i>Scheduled (river + truck)</span><span><i class="cfo-sw" data-swatch="0"></i>Actual</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#5c5c5c"></i>Cumulative scheduled (right axis)</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#d2560b"></i>Cumulative actual</span></div>
+<div class="cfo-weeknav" data-draw="svaNav"></div>
 <div class="cfo-chart" data-draw="svaChart" style="min-height:300px"></div>
-<div class="cfo-tw" style="margin-top:12px"><table class="cfo-table"><thead><tr><th>Date</th><th class="num">Scheduled (L)</th><th class="num">Actual river (L)</th><th class="num">Actual truck (L)</th><th class="num">Actual total (L)</th><th class="num">Variance (L)</th><th class="num">Cumulative variance (L)</th></tr></thead><tbody data-draw="svaRows"></tbody></table></div>
+<div class="cfo-tw" style="margin-top:12px"><table class="cfo-table"><thead><tr><th>Date</th><th class="num">Scheduled (L)</th><th class="num">Actual river (L)</th><th class="num">Actual truck (L)</th><th class="num">Actual total (L)</th><th class="num">Variance (L)</th><th class="num">Running variance (L)</th></tr></thead><tbody data-draw="svaRows"></tbody></table></div>
 </section>
 
 <section id="motion" class="cfo-card cfo-page" role="tabpanel" hidden>
@@ -135,7 +135,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <div class="cfo-tw" style="margin-top:12px"><table class="cfo-table"><thead><tr><th>Date</th><th class="num">Scheduled stock (L)</th><th class="num">Actual stock (L)</th><th class="num">Variance (L)</th><th class="num">Actual days of use</th></tr></thead><tbody data-draw="siteSvaRows"></tbody></table></div>
 </section>
 
-<section id="amigo" class="cfo-card cfo-page" role="tabpanel" hidden>
+<section id="amigo" class="cfo-card" hidden>
 <h2>Amigo 1 stock and trucking</h2>
 <p class="cfo-sub">Daily closing stock in the Amigo 1 silo vessel and litres sent to Kiunga by truck (7 trucks and 4 pre-filled tank-tainers on 19 Nov, already loaded; 12 trucks filled from Amigo 1 on the evening of 19 Nov leave with the 20 Nov convoys; from 20 Nov 14 trucks × 40,000 L = 560,000 L a day in three convoys at 5, 6 and 7 AM; a truck that can't be fuelled waits at Aiambak for the next convoy). Point at a day to see what was filled from Amigo 1 as well. CFO that won't fit waits aboard the Fly vessels.</p>
 <div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Closing stock</span><span><i class="cfo-sw" data-swatch="1"></i>Trucks sent to Kiunga</span><span><i class="cfo-swl"></i>Amigo 1 capacity</span></div>
@@ -603,10 +603,33 @@ dash.draw('fleetRows', (tb) => {
   r.data.forEach((d) => { const tr = document.createElement('tr'); tds(tr, [[d.Vessel], [d.Route], [d['CFO per voyage (L)'] == null ? null : fmtL(d['CFO per voyage (L)']), 'num'], [d['Last known event'] || 'TBC'], [d['Event date & time'] ? fmtT(d['Event date & time']) : null], [d.Notes, 'wrap']]); tb.appendChild(tr); });
 });
 
+const SV = {mode: 'all', off: 0}, SVN = {week: 7, fort: 14}, SVSTEP = {week: 'week', fort: 'fortnight'};
+const svaAll = () => { const s = dash.data('sva'); return s.status === 'ok' ? s.data.filter((d) => parseT(d.Date)) : null; };
+const svaRange = () => {
+  const all = svaAll(); if (!all || !all.length || SV.mode === 'all') return null;
+  const first = parseT(all[0].Date), last = parseT(all[all.length - 1].Date);
+  let t0 = d3.timeDay.floor(new Date()); if (t0 < first) t0 = first; if (t0 > last) t0 = last;
+  const a = d3.timeDay.offset(t0, SV.off * SVN[SV.mode]); return {a, b: d3.timeDay.offset(a, SVN[SV.mode]), first, last};
+};
+const svaRedraw = () => ['svaNav', 'svaTxt', 'svaChart', 'svaRows'].forEach((n) => dash.draw(n));
+dash.draw('svaNav', (el) => {
+  el.replaceChildren();
+  const mk = (t, on, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.addEventListener('click', fn); if (on) { b.style.background = 'var(--oktl-accent)'; b.style.color = '#fff'; b.style.borderColor = 'var(--oktl-accent)'; } b.setAttribute('aria-pressed', on ? 'true' : 'false'); el.appendChild(b); return b; };
+  [['week', 'Weekly'], ['fort', 'Fortnightly'], ['all', 'Overall']].forEach(([m, t]) => mk(t, SV.mode === m, () => { SV.mode = m; SV.off = 0; svaRedraw(); }));
+  if (SV.mode === 'all') return;
+  const sp = document.createElement('span'); sp.style.width = '10px'; el.appendChild(sp);
+  const r = svaRange();
+  const pv = mk('‹ Previous ' + SVSTEP[SV.mode], false, () => { SV.off -= 1; svaRedraw(); });
+  mk('Today', false, () => { SV.off = 0; svaRedraw(); });
+  const nx = mk('Next ' + SVSTEP[SV.mode] + ' ›', false, () => { SV.off += 1; svaRedraw(); });
+  const lbl = document.createElement('span'); lbl.className = 'cfo-weeklbl'; el.appendChild(lbl);
+  if (r) { pv.disabled = r.a <= r.first; nx.disabled = r.b > r.last; lbl.textContent = d3.timeFormat('%-d %b')(r.a) + ' – ' + d3.timeFormat('%-d %b')(d3.timeDay.offset(r.b, -1)); }
+});
 const svaRowsOf = () => {
   const s = dash.data('sva'); if (s.status !== 'ok') return null;
+  const r = svaRange();
   let cs = 0, ca = 0, last = -1;
-  const rows = s.data.map((d, i) => {
+  const rows = s.data.filter((d) => { if (!r) return true; const t = parseT(d.Date); return t && t >= r.a && t < r.b; }).map((d, i) => {
     const sr = Number(d['Scheduled by river (L)']) || 0, st = Number(d['Scheduled by truck (L)']) || 0;
     const ar = d['Actual by river (L)'], at = d['Actual by truck (L)'];
     const has = ar != null || at != null, act = has ? (Number(ar) || 0) + (Number(at) || 0) : null;
@@ -619,7 +642,8 @@ const sgn = (v) => (v >= 0 ? '+' : '−') + fmtL(Math.abs(v));
 dash.draw('svaTxt', (el) => {
   const o = svaRowsOf(); if (!o) { el.textContent = '—'; return; }
   const r = o.rows[o.last];
-  el.textContent = r ? 'To ' + fmtD(r.t) + ': ' + fmtL(r.ca) + ' L delivered against ' + fmtL(r.cs) + ' L scheduled (' + sgn(r.ca - r.cs) + ' L).' : 'No actuals entered yet.';
+  const pre = SV.mode === 'all' ? 'To ' : 'Selected ' + SVSTEP[SV.mode] + ', to ';
+  el.textContent = r ? pre + fmtD(r.t) + ': ' + fmtL(r.ca) + ' L delivered against ' + fmtL(r.cs) + ' L scheduled (' + sgn(r.ca - r.cs) + ' L).' : (SV.mode === 'all' ? 'No actuals entered yet.' : 'No actuals entered yet for this period.');
 });
 dash.draw('svaChart', (el) => {
   if (notReady(el, 'sva')) return;
@@ -633,10 +657,10 @@ dash.draw('svaChart', (el) => {
   let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
   const L = Math.ceil(lw) + 10;
   gy.attr('transform', `translate(${L},0)`); gy.select('.domain').remove(); gy.selectAll('line').attr('x2', W - L - R).style('stroke', 'var(--cds-chart-grid)');
-  const gr = svg.append('g').attr('transform', `translate(${W - R + 6},0)`).call(d3.axisRight(yc).ticks(5).tickFormat((v) => (v / 1e6).toFixed(0) + 'M cum.'));
+  const gr = svg.append('g').attr('transform', `translate(${W - R + 6},0)`).call(d3.axisRight(yc).ticks(5).tickFormat((v) => (v / 1e6).toFixed(yc.domain()[1] < 1e7 ? 1 : 0) + 'M'));
   gr.select('.domain').remove(); gr.selectAll('line').remove();
   const x = d3.scaleBand().domain(rows.map((d) => +d.t)).range([L, W - R]).padding(0.15), bw = x.bandwidth() / 2;
-  const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(d3.axisBottom(x).tickValues(rows.filter((d, i) => i % 7 === 0).map((d) => +d.t)).tickFormat((v) => d3.timeFormat('%d %b')(new Date(v))).tickSizeOuter(0));
+  const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(d3.axisBottom(x).tickValues(rows.filter((d, i) => i % (rows.length > 14 ? 7 : rows.length > 7 ? 2 : 1) === 0).map((d) => +d.t)).tickFormat((v) => d3.timeFormat('%d %b')(new Date(v))).tickSizeOuter(0));
   gx.selectAll('path,line').style('stroke', 'var(--cds-chart-axis)');
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(+d.t)).attr('width', bw).attr('y', (d) => y(d.sch)).attr('height', (d) => y(0) - y(d.sch)).style('fill', '#cfcfcf');
   svg.append('g').selectAll('rect').data(rows.filter((d) => d.act != null)).join('rect').attr('x', (d) => x(+d.t) + bw).attr('width', bw).attr('y', (d) => y(d.act)).attr('height', (d) => y(0) - y(d.act)).style('fill', OKTL[0]);

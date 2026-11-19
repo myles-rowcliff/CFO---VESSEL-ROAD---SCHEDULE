@@ -12,7 +12,7 @@ The owner is Myles (OKTL). The master copies of the schedule Sheet, the internal
 
 | Path | Contents |
 | --- | --- |
-| `docs/index.html` | The website: an interactive dashboard (Overview, Scheduled vs actual, Time & motion, Site fuel, Amigo 1, Summary). The Fleet tab is hidden (Myles, 19 Nov 2026) but `fleet.json` is still kept up to date. The Summary tab has Daily / Weekly / Fortnightly / Overall buttons: the first three are worked out in the page from the data files; Overall is the written text inline in `<div id="sumOverall">`. |
+| `docs/index.html` | The website: an interactive dashboard (Overview, Scheduled vs actual, Time & motion, Site fuel, Summary). The Fleet and Amigo 1 tabs are hidden (Myles, 19 Nov 2026) but their data is still kept up to date. Scheduled vs actual has Weekly / Fortnightly / Overall buttons. The Summary tab has Daily / Weekly / Fortnightly / Overall buttons: the first three are worked out in the page from the data files; Overall is the written text inline in `<div id="sumOverall">`. |
 | `docs/data/*.json` | Website data: `fly`, `river`, `amigo`, `site` (generated), `fleet`, `amigoset`, `sva`, `meta`, `notes` (edited by hand). `notes.json` holds dated notes of what actually happened (Date, Note); they show under "What happened" in the Summary's Daily/Weekly/Fortnightly views. |
 | `docs/d3.min.js`, `docs/logo.png`, `docs/.nojekyll` | Bundled so the site needs nothing from outside. |
 | `engine/engine.py` | Hour-by-hour simulation of every vessel and truck. Reads `params.json` (or the `PFILE` env var) and writes `engine_out.json` to the current folder. |
