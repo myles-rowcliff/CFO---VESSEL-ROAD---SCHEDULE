@@ -233,7 +233,7 @@ const cfoLoad = ({answer}) => {
   const rows = keys.slice(1).map((k) => { const r = v.rows[String(k)]; const o = {}; head.forEach((h, i) => { o[h] = cv(r[i]); }); return o; }).filter((o) => o[head[0]] != null);
   return {columns: head, rows};
 };
-['fly', 'river', 'amigo', 'fleet', 'amigoset', 'site', 'sva'].forEach((id) => dash.loader(id, {fn: cfoLoad}));
+['fly', 'river', 'amigo', 'fleet', 'amigoset', 'site', 'sva', 'notes'].forEach((id) => dash.loader(id, {fn: cfoLoad}));
 
 dash.calc('kpi', {inputs: ['fly'], fn: (fly) => {
   const leads = fly.map((r) => r['Lead time POM→Kiunga (days)']).filter((x) => typeof x === 'number');
@@ -718,9 +718,11 @@ dash.draw('sumPeriod', (el) => {
   const am = dash.data('amigo').data.filter((d) => inP(d.Date));
   if (am.length) {
     const ae = am[am.length - 1], wait = Number(ae['Waiting aboard Fly vessels (L)']) || 0;
-    st.push('<b>Amigo 1:</b> ' + L(sum(am, 'CFO in from Fly (L)')) + ' in, ' + L(sum(am, 'Trucked out (L)')) + ' trucked out; ' + L(ae['Closing stock (L)']) + ' in store at the end of ' + fmtDs(parseT(ae.Date)) + (wait ? ', with ' + L(wait) + ' still waiting aboard Fly vessels' : '') + '.');
+    st.push('<b>Amigo 1:</b> ' + L(sum(am, 'CFO in from Fly (L)')) + ' in, ' + L(sum(am, 'Trucked out (L)')) + ' filled into trucks; ' + L(ae['Closing stock (L)']) + ' in store at the end of ' + fmtDs(parseT(ae.Date)) + (wait ? ', with ' + L(wait) + ' still waiting aboard Fly vessels' : '') + '.');
   }
   const ul = add('ul', ''); st.forEach((t) => { const li = document.createElement('li'); li.innerHTML = t; ul.appendChild(li); });
+  const nd = dash.data('notes'), notes = nd.status === 'ok' ? nd.data.filter((d) => inP(d.Date) && d.Note) : [];
+  if (notes.length) list('What happened', notes.map((d) => (n === 1 ? '' : '<b>' + fmtDs(parseT(d.Date)) + ':</b> ') + esc(d.Note)), '');
   const ev = [];
   dash.data('fly').data.forEach((f) => {
     const v = '<b>' + esc(f.Vessel) + '</b>';
@@ -738,7 +740,7 @@ dash.draw('sumPeriod', (el) => {
   const full = 560000;
   const short = am.filter((d) => d.Date >= '2026-11-20' && (Number(d['Trucked out (L)']) || 0) < full);
   list('Trucks', [
-    'Trucked out of Amigo 1: ' + L(sum(am, 'Trucked out (L)')) + (am.length ? ' over ' + am.length + ' day' + (am.length > 1 ? 's' : '') : '') + '; truck arrivals at Kiunga ' + L(tr) + '.',
+    'Filled into trucks from Amigo 1: ' + L(sum(am, 'Trucked out (L)')) + (am.length ? ' over ' + am.length + ' day' + (am.length > 1 ? 's' : '') : '') + '; truck arrivals at Kiunga ' + L(tr) + '.',
   ].concat(short.length ? short.map((d) => { const k = Math.round((Number(d['Trucked out (L)']) || 0) / 40000); return '<b>' + fmtDs(parseT(d.Date)) + ':</b> ' + (k ? 'only ' + k + ' trucks (' + L(d['Trucked out (L)']) + ')' : 'no trucks') + ' instead of 14 – Amigo 1 runs short; the rest wait at Aiambak for the next convoy.'; }) : am.some((d) => d.Date >= '2026-11-20') ? ['Full convoys every day' + (am[0].Date < '2026-11-20' ? ' from 20 Nov' : '') + ' (14 trucks, 560,000 L).'] : []), '');
 });
 
