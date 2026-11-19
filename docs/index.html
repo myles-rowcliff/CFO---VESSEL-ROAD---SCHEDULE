@@ -101,7 +101,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 </section>
 <section id="kweeks" class="cfo-card cfo-page" data-with="kpis">
 <h2>CFO projected to reach Kiunga – day by day</h2>
-<p class="cfo-sub">Litres arriving at Kiunga each day by river and by truck, against the site's daily use. Under each day: Kiunga/Tabubil stock at the end of the day, and the net change (arrivals less 350,000 L of site use; green up, red down). Show 1, 2 or 8 weeks, starting today.</p>
+<p class="cfo-sub">Litres arriving at Kiunga each day by river and by truck, against the site's daily use, with Kiunga/Tabubil stock at the end of each day. Show 1, 2 or 8 weeks, starting today.</p>
 <div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>By river</span><span><i class="cfo-sw" data-swatch="1"></i>By truck</span><span><i class="cfo-swl"></i>Daily site need</span></div>
 <div class="cfo-chart" data-draw="dayChart" style="min-height:260px"></div>
 </section>
@@ -443,10 +443,9 @@ dash.draw('dayChart', {
     const w0 = d3.timeDay.offset(today0, st.off * N), w1 = d3.timeDay.offset(w0, N);
     const rows = all.filter((d) => d.t >= w0 && d.t < w1), day = d3.max(all, (d) => d.use) || 0;
     const tot = rows.reduce((a, d) => a + d.rv + d.tr, 0), need = day * rows.length;
-    const used = rows.reduce((a, d) => a + d.use, 0);
-    st.lbl.textContent = d3.timeFormat('%a %-d %b')(w0) + ' – ' + d3.timeFormat('%a %-d %b')(d3.timeDay.offset(w1, -1)) + '  ·  ' + fmtL(tot) + ' L to Kiunga vs ' + fmtL(need) + ' L need  ·  net ' + sgn(tot - used) + ' L';
+    st.lbl.textContent = d3.timeFormat('%a %-d %b')(w0) + ' – ' + d3.timeFormat('%a %-d %b')(d3.timeDay.offset(w1, -1)) + '  ·  ' + fmtL(tot) + ' L to Kiunga vs ' + fmtL(need) + ' L need';
     if (!rows.length) { st.box.textContent = 'No days in the schedule for this period'; return; }
-    const W = Math.max(300, st.box.clientWidth || el.clientWidth), H = 284, T = 20, B = 66, R = 6;
+    const W = Math.max(300, st.box.clientWidth || el.clientWidth), H = 270, T = 20, B = 52, R = 6;
     const svg = d3.select(st.box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
     const y = d3.scaleLinear().domain([0, Math.max(day * 1.5, d3.max(rows, (d) => d.rv + d.tr)) * 1.12]).nice().range([H - B, T]);
     const gy = svg.append('g').call(d3.axisLeft(y).ticks(5).tickFormat((v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : (v / 1e3).toFixed(0) + 'k')));
@@ -462,10 +461,6 @@ dash.draw('dayChart', {
     if (N <= 14) lab.selectAll('text.d3').data(labDays).join('text').attr('class', 'd3').attr('x', (d) => x(+d) + x.bandwidth() / 2).attr('y', H - B + (narrow ? 44 : 32)).attr('text-anchor', 'middle')
       .style('fill', (d) => { const r = byKey.get(+d); return r && r.stock < day ? 'var(--cds-chart-status-critical)' : 'var(--cds-text-secondary)'; })
       .text((d) => { const r = byKey.get(+d); if (!r) return ''; return (narrow ? '' : 'Stock ') + (r.stock >= 1e6 ? (r.stock / 1e6).toFixed(2) + 'M' : Math.round(r.stock / 1e3) + 'k'); });
-    const netTxt = (v) => (v >= 0 ? '+' : '−') + (Math.abs(v) >= 1e6 ? (Math.abs(v) / 1e6).toFixed(2) + 'M' : Math.round(Math.abs(v) / 1e3) + 'k');
-    if (N <= 14) lab.selectAll('text.d4').data(labDays).join('text').attr('class', 'd4').attr('x', (d) => x(+d) + x.bandwidth() / 2).attr('y', H - B + (narrow ? 58 : 47)).attr('text-anchor', 'middle').style('font-weight', 600)
-      .style('fill', (d) => { const r = byKey.get(+d); return r && r.rv + r.tr - r.use < 0 ? 'var(--cds-chart-status-critical)' : '#2e7d32'; })
-      .text((d) => { const r = byKey.get(+d); if (!r) return ''; return (narrow ? '' : 'Net ') + netTxt(r.rv + r.tr - r.use); });
     svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--cds-chart-axis)');
     const g = svg.append('g'), vis = days.map((d) => byKey.get(+d)).filter(Boolean);
     g.selectAll('rect.r').data(vis).join('rect').attr('class', 'r').attr('x', (d) => x(+d.t)).attr('width', x.bandwidth()).attr('y', (d) => y(d.rv)).attr('height', (d) => y(0) - y(d.rv)).attr('rx', 2).style('fill', OKTL[0]);
@@ -475,7 +470,7 @@ dash.draw('dayChart', {
       .text((d) => { const v = d.rv + d.tr; return v === 0 ? '0' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : Math.round(v / 1e3) + 'k'; });
     const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; st.box.appendChild(tip);
     g.selectAll('rect.h').data(vis).join('rect').attr('class', 'h').attr('x', (d) => x(+d.t) - x.step() * 0.14).attr('width', x.step()).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
-      .on('pointermove', (ev, d) => tipAt(tip, st.box, ev, [d3.timeFormat('%A %-d %B')(d.t), 'By river: ' + fmtL(d.rv) + ' L', 'By truck: ' + fmtL(d.tr) + ' L', 'Total to Kiunga: ' + fmtL(d.rv + d.tr) + ' L', 'Site use: ' + fmtL(d.use) + ' L', 'Net change: ' + sgn(d.rv + d.tr - d.use) + ' L', 'End-of-day stock: ' + fmtL(d.stock) + ' L (' + (day ? (d.stock / day).toFixed(1) : '—') + ' days)']))
+      .on('pointermove', (ev, d) => tipAt(tip, st.box, ev, [d3.timeFormat('%A %-d %B')(d.t), 'By river: ' + fmtL(d.rv) + ' L', 'By truck: ' + fmtL(d.tr) + ' L', 'Total to Kiunga: ' + fmtL(d.rv + d.tr) + ' L', 'Site use: ' + fmtL(d.use) + ' L', 'End-of-day stock: ' + fmtL(d.stock) + ' L (' + (day ? (d.stock / day).toFixed(1) : '—') + ' days)']))
       .on('pointerleave', () => { tip.style.display = 'none'; });
   }
 });
