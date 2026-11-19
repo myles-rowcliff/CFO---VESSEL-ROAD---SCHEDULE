@@ -124,8 +124,8 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 
 <section id="site" class="cfo-card cfo-page" role="tabpanel" hidden>
 <h2>Projected site stock – Tabubil</h2>
-<p class="cfo-sub">Projected closing CFO stock on site each day from the current schedule, after the day's use: river and truck arrivals at Kiunga, less 350,000 L a day of site use. The solid bar is what's left at the end of the day; the faded top is what was used. <span data-draw="siteMinLbl">Lowest closing stock</span> is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>. <span data-draw="siteNetLbl">Net change</span>: <b data-draw="siteNet">—</b> L (arrivals less site use).</p>
-<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Projected closing stock, after the day's use</span><span><i class="cfo-sw" style="background:#d2560b;opacity:.22"></i>Used that day (350,000 L)</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span></div>
+<p class="cfo-sub">Projected closing CFO stock on site each day from the current schedule, after the day's use: river and truck arrivals at Kiunga, less 350,000 L a day of site use. <span data-draw="siteMinLbl">Lowest closing stock</span> is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>. <span data-draw="siteNetLbl">Net change</span>: <b data-draw="siteNet">—</b> L (arrivals less site use).</p>
+<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Projected closing stock, after the day's use</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span></div>
 <div class="cfo-weeknav" data-draw="siteNav"></div>
 <div class="cfo-chart" data-draw="siteChart" style="min-height:240px"></div>
 </section>
@@ -619,7 +619,7 @@ dash.draw('siteChart', (el) => {
   const day = d3.max(rows, (d) => d.use) || 0;
   const W = Math.max(280, el.clientWidth), H = 240, T = 14, B = 24, R = 8;
   const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
-  const yS = d3.scaleLinear().domain([Math.min(0, d3.min(rows, (d) => d.stock)), Math.max(day * 2, d3.max(rows, (d) => d.stock + d.use)) * 1.08]).nice().range([H - B, T]);
+  const yS = d3.scaleLinear().domain([Math.min(0, d3.min(rows, (d) => d.stock)), Math.max(day * 2, d3.max(rows, (d) => d.stock)) * 1.05]).nice().range([H - B, T]);
   const gy = svg.append('g').call(d3.axisLeft(yS).ticks(5).tickFormat((v) => (v / 1e6).toFixed(1) + 'M'));
   let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
   const L = Math.ceil(lw) + 10;
@@ -630,7 +630,6 @@ dash.draw('siteChart', (el) => {
   const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(ax.tickSizeOuter(0));
   gx.selectAll('path,line').style('stroke', 'var(--cds-chart-axis)');
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t) + gap / 2).attr('width', bw).attr('y', (d) => Math.min(yS(d.stock), yS(0))).attr('height', (d) => Math.abs(yS(d.stock) - yS(0))).style('fill', (d) => (d.stock < 0 ? 'var(--cds-chart-status-critical)' : d.stock < day ? OKTL[1] : OKTL[0])).style('opacity', 0.9);
-  svg.append('g').selectAll('rect').data(rows.filter((d) => d.use > 0 && d.stock >= 0)).join('rect').attr('x', (d) => x(d.t) + gap / 2).attr('width', bw).attr('y', (d) => yS(d.stock + d.use)).attr('height', (d) => yS(d.stock) - yS(d.stock + d.use)).style('fill', OKTL[0]).style('opacity', 0.22);
   if (day) { svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', yS(day)).attr('y2', yS(day)).style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 3'); svg.append('text').attr('x', W - R).attr('y', yS(day) - 4).attr('text-anchor', 'end').text('1 day of site use ' + fmtL(day) + ' L'); }
   const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw + 1).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
