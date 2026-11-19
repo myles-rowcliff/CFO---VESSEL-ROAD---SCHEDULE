@@ -123,12 +123,12 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 </section>
 
 <section id="site" class="cfo-card cfo-page" role="tabpanel" hidden>
-<h2>Tabubil site fuel</h2>
-<p class="cfo-sub">Closing CFO stock on site each day: river and truck arrivals at Kiunga, less 350,000 L a day of site use. Lowest closing stock is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>.</p>
-<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Closing site stock</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span></div>
+<h2>Projected site stock – Tabubil</h2>
+<p class="cfo-sub">Projected closing CFO stock on site each day from the current schedule: river and truck arrivals at Kiunga, less 350,000 L a day of site use. Lowest closing stock is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>.</p>
+<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Projected closing site stock</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span></div>
 <div class="cfo-chart" data-draw="siteChart" style="min-height:240px"></div>
 </section>
-<section id="sitesva" class="cfo-card cfo-page" data-with="site" hidden>
+<section id="sitesva" class="cfo-card" hidden>
 <h2>Scheduled vs actual – Tabubil site stock</h2>
 <p class="cfo-sub">Closing CFO stock on site at the end of each day. Scheduled is the plan locked on 19 Nov 2026, plus any vessel later sent straight from Aiambak to Kiunga; actual is the measured stock. <b data-draw="siteSvaTxt">—</b></p>
 <div class="cfo-legend"><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#5c5c5c"></i>Scheduled closing stock</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#d2560b"></i>Actual closing stock</span><span><i class="cfo-swl"></i>One day of site use</span></div>
@@ -594,7 +594,7 @@ dash.draw('siteChart', (el) => {
   if (day) { svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', yS(day)).attr('y2', yS(day)).style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 3'); svg.append('text').attr('x', W - R).attr('y', yS(day) - 4).attr('text-anchor', 'end').text('1 day of site use ' + fmtL(day) + ' L'); }
   const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw + 1).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
-    .on('pointermove', (ev, d) => tipAt(tip, el, ev, [fmtD(d.t), 'River in: ' + fmtL(d.rv) + ' L', 'Trucks in: ' + fmtL(d.tr) + ' L', 'Site use: ' + fmtL(d.use) + ' L', 'Closing stock: ' + fmtL(d.stock) + ' L (' + (day ? (d.stock / day).toFixed(1) : '—') + ' days)']))
+    .on('pointermove', (ev, d) => tipAt(tip, el, ev, [fmtD(d.t), 'River in: ' + fmtL(d.rv) + ' L', 'Trucks in: ' + fmtL(d.tr) + ' L', 'Site use: ' + fmtL(d.use) + ' L', 'Projected closing stock: ' + fmtL(d.stock) + ' L (' + (day ? (d.stock / day).toFixed(1) : '—') + ' days)']))
     .on('pointerleave', () => { tip.style.display = 'none'; });
 });
 
