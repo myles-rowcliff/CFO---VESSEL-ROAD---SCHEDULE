@@ -51,7 +51,7 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 - **Trucks:** 40,000 L each, from Amigo 1 to Kiunga, 7 h. From 20 Nov 2026, 14 trucks a day in three convoys: A 5 AM (6), B 6 AM (4), C 7 AM (4). Truck turnaround **16 h (confirmed)**. A truck that can't be fuelled waits for the next convoy.
 - **Site use:** 350,000 L a day.
 - **Kiunga / Tabubil storage:** treat as **unlimited** until Myles says otherwise. Don't list it as a risk.
-- **Tank-tainers** come off freight vessels discharged at Aiambak. They are not part of the schedule; don't model or mention their source. Gravity-feed them only if Myles says so.
+- **Tank-tainers** come off freight vessels discharged at Aiambak. They are not part of the schedule; don't model or mention their source. Gravity-feed them only if Myles says so. Diesel tank-tainers sent to Kiunga are **pre-filled** unless Myles says otherwise, so they don't draw on Amigo 1 (in `params.json` `extra_loads`, set the third value to `false`).
 - **Johnny Traveller:** not relevant to the schedule; don't include or mention it.
 
 ## Decisions
