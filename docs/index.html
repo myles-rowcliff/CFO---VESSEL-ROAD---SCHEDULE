@@ -69,6 +69,50 @@ body { margin: 0; background: var(--color-page); color: var(--color-fg); }
 details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); font-size: 14px; }
 .cfo-err { color: var(--cds-chart-status-critical); }
 @media print { .cfo-tabs { display: none; } }
+.cfo-btn { font: 600 13px/1 var(--oktl-sans); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: 6px; padding: 9px 14px; cursor: pointer; }
+.cfo-btn:hover { border-color: var(--oktl-accent); }
+.cfo-btn.pri { background: var(--oktl-accent); border-color: var(--oktl-accent); color: #fff; }
+.mf-ctl { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end; margin: 6px 0 16px; font-size: 13px; }
+.mf-ctl label { display: flex; flex-direction: column; gap: 4px; color: var(--color-fg-muted); font-weight: 600; }
+.mf-ctl input { font: 400 14px/1.2 var(--oktl-mono); padding: 7px 8px; border: 1px solid var(--color-border-line); border-radius: 6px; background: var(--color-bg); color: var(--color-fg); }
+.mf-ctl input[type=number] { width: 70px; }
+.mf-tbl { min-width: 560px; }
+.mf-strip input { max-width: 60vw; }
+@media (max-width: 560px) { .mf-brand b, .mf-title { font-size: 20px; } }
+.mf-ctl .grp { display: flex; gap: 8px; align-items: flex-end; padding: 8px 10px; border: 1px solid var(--color-border-line); border-radius: 8px; }
+.mf-ctl .grp b { align-self: center; color: var(--color-fg); }
+.mf-plan { font-size: 13px; color: var(--color-fg-muted); margin: -6px 0 14px; }
+.mf-sheet { font-family: Arial, Helvetica, sans-serif; color: #111; }
+.mf-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 24px; padding: 6px 0 14px; }
+.mf-brand b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
+.mf-brand span { color: #666; font-size: 15px; }
+.mf-title { font-size: 26px; font-weight: 700; }
+.mf-strip { display: flex; flex-wrap: wrap; background: #e9e9e9; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 10px 6px; gap: 8px 0; font-size: 13px; }
+.mf-strip div { padding: 0 16px; border-left: 1px solid #c4c4c4; } .mf-strip div:first-child { border-left: 0; }
+.mf-strip span { color: #555; margin-right: 6px; } .mf-strip b { color: #111; }
+.mf-strip input { font: 700 13px Arial, Helvetica, sans-serif; border: 0; border-bottom: 1px dashed #999; background: transparent; width: 190px; padding: 1px 2px; }
+.mf-conv { margin-top: 18px; }
+.mf-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; background: #ffa000; color: #111; font-weight: 700; font-size: 14px; padding: 10px 16px; }
+.mf-tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.mf-tbl th { text-align: left; font-size: 12.5px; letter-spacing: .03em; text-transform: uppercase; padding: 9px 8px; border: 1px solid #d0d0d0; background: #fafafa; }
+.mf-tbl td { padding: 6px 8px; border: 1px solid #d0d0d0; vertical-align: middle; }
+.mf-tbl td.n, .mf-tbl th.n { text-align: right; font-variant-numeric: tabular-nums; }
+.mf-tbl input { font: 400 14px Arial, Helvetica, sans-serif; width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 5px 6px; background: #fff; color: #111; }
+.mf-tbl input.n { text-align: right; }
+.mf-tot { background: #e9e9e9; text-align: right; font-weight: 700; font-size: 15px; padding: 10px 16px; }
+.mf-grand { margin-top: 18px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 28px; background: #222; color: #fff; padding: 12px 16px; font-weight: 700; font-size: 16px; }
+.mf-sign { margin-top: 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px 28px; font-size: 13px; color: #444; }
+.mf-sign div { border-top: 1px solid #888; padding-top: 6px; }
+@media print {
+  body.mf-printing .cfo > *:not(#manifest) { display: none !important; }
+  body.mf-printing #manifest { display: block !important; border: 0; padding: 0; }
+  body.mf-printing .mf-noprint { display: none !important; }
+  body.mf-printing .page { padding: 0; max-width: none; }
+  body.mf-printing { background: #fff; }
+  .mf-tbl input, .mf-strip input { border: 0 !important; padding: 0 !important; }
+  .mf-bar, .mf-strip, .mf-tot, .mf-grand { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .mf-conv { break-inside: avoid; }
+}
 </style>
 <script src="d3.min.js"></script>
 </head>
@@ -85,6 +129,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <button type="button" class="cfo-tab" role="tab" data-tab="motion" aria-selected="false">Time &amp; motion</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="site" aria-selected="false">Site fuel</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="amigo" aria-selected="false">Amigo 1</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="manifest" aria-selected="false">Convoy manifest</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="summary" aria-selected="false">Summary</button>
 </nav>
 
@@ -150,6 +195,14 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <div class="cfo-tw"><table class="cfo-table"><thead><tr><th>Vessel</th><th>Route</th><th class="num">CFO per voyage (L)</th><th>Last known event</th><th>Date &amp; time</th><th>Notes</th></tr></thead><tbody data-draw="fleetRows"></tbody></table></div>
 </section>
 
+<section id="manifest" class="cfo-card cfo-page" role="tabpanel" hidden>
+<div class="mf-noprint">
+<h2>Convoy manifest</h2>
+<p class="cfo-sub">Pick a date, set the trucks and departure time for each convoy, then type the truck and tanker numbers and litres loaded. Totals update as you type. Press <b>Print</b> for a clean sheet. What you type is kept only in this browser on this computer – it isn't saved to the website or shared.</p>
+<div data-draw="mfCtl"></div>
+</div>
+<div class="mf-sheet" data-draw="mfSheet"></div>
+</section>
 <section id="summary" class="cfo-card cfo-page" role="tabpanel" hidden>
 <div class="cfo-weeknav" data-draw="sumNav"></div>
 <div data-draw="sumPeriod" class="cfo-sumtext" hidden></div>
@@ -724,6 +777,76 @@ dash.draw('svaRows', (tb) => {
   });
 });
 
+
+/* Convoy manifest: a planner/printable sheet, kept only in this browser */
+const MF = {date: d3.timeFormat('%Y-%m-%d')(new Date())};
+const MFDEF = () => ({ref: '', conv: [{name: 'A', time: '05:00', n: 6}, {name: 'B', time: '06:00', n: 4}, {name: 'C', time: '07:00', n: 4}], rows: {}});
+const mfLoad = (d) => { try { const v = JSON.parse(localStorage.getItem('cfoManifest:' + d) || 'null'); if (v && v.conv) return v; } catch (e) { /* storage blocked */ } return MFDEF(); };
+const mfSave = () => { try { localStorage.setItem('cfoManifest:' + MF.date, JSON.stringify(MF.st)); } catch (e) { /* storage blocked */ } };
+MF.st = mfLoad(MF.date);
+const mfRow = (c, i) => { const r = (MF.st.rows[c.name] = MF.st.rows[c.name] || []); while (r.length <= i) r.push({truck: '', tanker: '', litres: 40000}); return r[i]; };
+const mfEta = (time) => { const [h, m] = time.split(':').map(Number); const t = new Date(parseT(MF.date)); t.setHours(h, m || 0); return d3.timeHour.offset(t, 7); };
+const mfT = (d) => d3.timeFormat('%-I:%M %p')(d);
+const mfTotals = () => { let n = 0, l = 0; const per = MF.st.conv.map((c) => { let cl = 0; for (let i = 0; i < c.n; i++) cl += Number(mfRow(c, i).litres) || 0; n += c.n; l += cl; return cl; }); return {n, l, per}; };
+dash.draw('mfCtl', {
+  mount: (el) => ({}),
+  update: (el) => {
+    el.replaceChildren(); const w = document.createElement('div'); w.className = 'mf-ctl'; el.appendChild(w);
+    const lab = (t, inp) => { const l = document.createElement('label'); l.append(t, inp); return l; };
+    const di = document.createElement('input'); di.type = 'date'; di.value = MF.date;
+    di.addEventListener('change', () => { if (!di.value) return; MF.date = di.value; MF.st = mfLoad(MF.date); dash.draw('mfCtl'); dash.draw('mfSheet'); });
+    w.appendChild(lab('Departure date', di));
+    MF.st.conv.forEach((c) => {
+      const g = document.createElement('div'); g.className = 'grp'; const b = document.createElement('b'); b.textContent = 'Convoy ' + c.name; g.appendChild(b);
+      const ni = document.createElement('input'); ni.type = 'number'; ni.min = 0; ni.max = 40; ni.value = c.n;
+      ni.addEventListener('change', () => { c.n = Math.max(0, Math.min(40, Math.round(Number(ni.value) || 0))); ni.value = c.n; mfSave(); dash.draw('mfSheet'); });
+      const ti = document.createElement('input'); ti.type = 'time'; ti.value = c.time;
+      ti.addEventListener('change', () => { if (ti.value) { c.time = ti.value; mfSave(); dash.draw('mfSheet'); } });
+      g.append(lab('Trucks', ni), lab('Departs', ti)); w.appendChild(g);
+    });
+    const btn = (t, pri, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cfo-btn' + (pri ? ' pri' : ''); b.textContent = t; b.addEventListener('click', fn); w.appendChild(b); };
+    btn('Print', true, () => { document.body.classList.add('mf-printing'); window.print(); setTimeout(() => document.body.classList.remove('mf-printing'), 500); });
+    btn('Clear this date', false, () => { if (!confirm('Clear everything typed for ' + d3.timeFormat('%-d %b %Y')(parseT(MF.date)) + '?')) return; try { localStorage.removeItem('cfoManifest:' + MF.date); } catch (e) { /* storage blocked */ } MF.st = MFDEF(); dash.draw('mfCtl'); dash.draw('mfSheet'); });
+    const am = dash.data('amigo'), row = am.status === 'ok' ? am.data.find((d) => d.Date === MF.date) : null;
+    const p = document.createElement('div'); p.className = 'mf-plan'; el.appendChild(p);
+    if (row) { const v = Number(row['Trucks sent to Kiunga (L)']) || 0; p.textContent = 'The schedule plans ' + fmtL(v) + ' L by truck from Aiambak on this date (about ' + Math.round(v / 40000) + ' trucks of 40,000 L). Amigo 1 closing stock that day: ' + fmtL(Number(row['Closing stock (L)']) || 0) + ' L.'; }
+  }
+});
+dash.draw('mfSheet', {
+  mount: (el) => ({}),
+  update: (el) => {
+    el.replaceChildren();
+    const H = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+    const dd = parseT(MF.date), ymd = d3.timeFormat('%Y%m%d')(dd);
+    const head = H('div', 'mf-head'); head.append(H('div', 'mf-brand', '<b>OKT Logistics</b><span>Aiambak Operations · CFO Convoys</span>'), H('div', 'mf-title', 'Northbound Convoy Manifest')); el.appendChild(head);
+    const strip = H('div', 'mf-strip');
+    const refBox = H('div', null, '<span>Convoy reference:</span>'); const ri = document.createElement('input'); ri.type = 'text'; ri.value = MF.st.ref || 'AIA-C-' + ymd; ri.addEventListener('input', () => { MF.st.ref = ri.value; mfSave(); }); refBox.appendChild(ri);
+    strip.append(refBox, H('div', null, '<span>Route:</span><b>AIAMBAK → KIUNGA</b>'), H('div', null, '<span>Departure date:</span><b>' + d3.timeFormat('%a %-d %b %Y')(dd) + '</b>'), H('div', null, '<span>Cargo:</span><b>DIESEL FUEL (CFO)</b>'));
+    el.appendChild(strip);
+    const totEls = []; let truckNo = 0;
+    const grand = H('div', 'mf-grand');
+    const refresh = () => { const t = mfTotals(); totEls.forEach(([ci, bar, foot]) => { const c = MF.st.conv[ci]; bar.textContent = c.n + ' truck' + (c.n === 1 ? '' : 's') + ' • ' + fmtL(t.per[ci]) + ' L'; foot.textContent = 'Convoy ' + c.name + ' total: ' + c.n + ' truck' + (c.n === 1 ? '' : 's') + ' · ' + fmtL(t.per[ci]) + ' L'; }); grand.innerHTML = '<span>Total trucks sent: ' + t.n + '</span><span>Total litres sent: ' + fmtL(t.l) + ' L</span>'; };
+    MF.st.conv.forEach((c, ci) => {
+      if (!c.n) return;
+      const box = H('div', 'mf-conv'); const eta = mfEta(c.time), dep = new Date(eta - 7 * 36e5);
+      const bar = H('div', 'mf-bar'); const bl = H('span', null, 'Convoy ' + c.name + ' | Departs Aiambak ' + mfT(dep) + ' | ETA Kiunga ' + mfT(eta) + (d3.timeDay.floor(eta) > dd ? ' (' + d3.timeFormat('%-d %b')(eta) + ')' : '')); const br = H('span'); bar.append(bl, br); box.appendChild(bar);
+      const tbl = H('table', 'mf-tbl', '<thead><tr><th style="width:44px">#</th><th>Truck number</th><th>Tanker number</th><th class="n">Litres loaded</th><th>Departure time</th><th>ETA Kiunga</th></tr></thead>');
+      const tb = H('tbody'); tbl.appendChild(tb);
+      for (let i = 0; i < c.n; i++) {
+        const r = mfRow(c, i); truckNo += 1; const tr = H('tr');
+        const td = (cls) => { const x = H('td', cls); tr.appendChild(x); return x; };
+        td().textContent = truckNo;
+        const mk = (k, cls) => { const x = document.createElement('input'); x.type = 'text'; if (cls) x.className = cls; x.value = k === 'litres' ? (r.litres == null || r.litres === '' ? '' : fmtL(r.litres)) : r[k]; x.addEventListener('input', () => { if (k === 'litres') { const v = Number(x.value.replace(/[,\s]/g, '')); r.litres = x.value.trim() === '' || isNaN(v) ? '' : v; } else r[k] = x.value; mfSave(); refresh(); }); if (k === 'litres') x.addEventListener('blur', () => { if (r.litres !== '') x.value = fmtL(r.litres); }); return x; };
+        td().appendChild(mk('truck')); td().appendChild(mk('tanker')); td('n').appendChild(mk('litres', 'n'));
+        td().textContent = mfT(dep); td().textContent = mfT(eta);
+        tb.appendChild(tr);
+      }
+      const tw = H('div', 'cfo-tw'); tw.appendChild(tbl); box.appendChild(tw); const foot = H('div', 'mf-tot'); box.appendChild(foot); el.appendChild(box); totEls.push([ci, br, foot]);
+    });
+    el.appendChild(grand);
+    refresh();
+  }
+});
 
 /* Site fuel: scheduled vs actual closing stock */
 const siteSvaOf = () => {
