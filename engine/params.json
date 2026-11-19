@@ -39,10 +39,14 @@
    "name": "Fly Resilience",
    "cap": 1500000,
    "now": 1500000,
-   "event": "Standby at Aiambak",
-   "date": "2026-11-18T14:00:00",
+   "event": "Passed Aiambak to Kiunga",
+   "date": "2026-11-20T08:30:00",
    "hold": 0,
-   "dis_from": "2026-11-20T06:00:00"
+   "t_ak": 3.0,
+   "t_ka": 3.0,
+   "dis_k": 0.5,
+   "depart_aia": true,
+   "since": "2026-11-18T14:00:00"
   },
   {
    "name": "Fly Prosperity",
