@@ -38,7 +38,7 @@
   {
    "name": "Fly Resilience",
    "cap": 1500000,
-   "now": 1200000,
+   "now": 1500000,
    "event": "Standby at Aiambak",
    "date": "2026-11-18T14:00:00",
    "hold": 0
@@ -56,7 +56,7 @@
    "cap": 1000000,
    "now": 1000000,
    "event": "Loading at POM",
-   "date": "2026-11-19T12:00:00",
+   "date": "2026-11-21T12:00:00",
    "hold": 0
   },
   {
