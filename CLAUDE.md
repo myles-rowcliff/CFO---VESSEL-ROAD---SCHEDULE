@@ -39,6 +39,7 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 
 - The comparison starts 19 Nov 2026 and uses the locked baseline. Actual litres to Kiunga (river and truck) go into `docs/data/sva.json`; `null` means not entered yet.
 - Rebuilding the schedule never changes the baseline or the actuals.
+- **Direct runs (Myles, 19 Nov 2026):** when a vessel is sent straight from Aiambak to Kiunga, add its litres to "Scheduled by river (L)" in `docs/data/sva.json` (and `data/d_sva.json`) on the day it discharges at Kiunga, and list it in the note under the tab heading in `docs/index.html`. Leave `engine/baseline_19nov.json` untouched. Done so far: Fly Challenger 1,200,000 L on 22 Nov.
 
 ## Planning rules (confirmed by Myles)
 
