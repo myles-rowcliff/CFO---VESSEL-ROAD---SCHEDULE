@@ -12,7 +12,7 @@ WS=P['wonder']
 # ---------- vessels
 fly=[]; FLYK=[]
 for v in P['fly']:
-    f=dict(name=v['name'],cap=v['cap'],cargo=0,phase=None,t=None,voy=0,rec=None,recs=[],busy=NOW,hold=v.get('hold',0),da=v.get('dis_aia',DA),dfrom=T(v.get('dis_from')))  # dis_from: alongside at Aiambak but not discharging before this time
+    f=dict(name=v['name'],cap=v['cap'],cargo=0,phase=None,t=None,voy=0,rec=None,recs=[],busy=NOW,hold=v.get('hold',0),da=v.get('dis_aia',DA),dfrom=T(v.get('dis_from')),amigo_only=v.get('amigo_only',[]))  # amigo_only: voyage numbers whose CFO all goes into Amigo 1 (not to river vessels)  # dis_from: alongside at Aiambak but not discharging before this time
     ev,d=v['event'],T(v['date'])
     # 'Standby at Aiambak' = alongside at Aiambak, treated as discharging there until a decision is entered
     if ev in('ETA Aiambak','Standby at Aiambak'): f.update(phase='to_aia',t=d,cargo=v['now'] or v['cap'],dep=d-days(TO),ls=d-days(TO+LP))
@@ -31,7 +31,7 @@ for v in P['fly']:
     fly.append(f)
 riv=[]; rrecs=[]
 for v in P['river']:
-    r=dict(name=v['name'],cap=v['cap'],phase=None,t=None,cargo=0,rec=None,combo=v.get('pom_cycle',False))
+    r=dict(name=v['name'],cap=v['cap'],phase=None,t=None,cargo=0,rec=None,combo=v.get('pom_cycle',False),pom_once=T(v.get('pom_once')))  # pom_once: first time it is back at Aiambak empty before this time, it sails to POM, loads there and goes straight to Kiunga
     ev,d=v['event'],T(v['date'])
     if ev=='ETA Kiunga':
         r.update(phase='to_k',t=d,cargo=v['cap']); r['rec']=dict(Vessel=r['name'],at='Aiambak',frm='Before schedule start',ls=d-days(TAK+LA),dep=d-days(TAK),k=d,cfo=v['cap'])
@@ -99,6 +99,9 @@ while t<END+days(4):
                 ls=r['t']; dep=ls+days(LP); k=dep+days(TO+TAK)
                 r['phase']='to_k'; r['t']=k; r['cargo']=r['cap']
                 r['rec']=dict(Vessel=r['name'],at='POM',frm='Johnny Traveller',ls=ls,dep=dep,k=k,cfo=r['cap'])
+            elif r['phase']=='to_aia' and r['pom_once'] and t<=r['pom_once']:
+                r['pom_once']=None; ls=t+days(TB); dep=ls+days(LP); k=dep+days(TO+TAK)
+                r['phase']='to_k'; r['t']=k; r['cargo']=r['cap']; r['rec']=dict(Vessel=r['name'],at='POM',frm='Loaded at POM (one-off trip from Aiambak)',ls=ls,dep=dep,k=k,cfo=r['cap'])
             elif r['phase']=='to_aia': r['phase']='waiting'; r['t']=None; r['since']=t
             elif r['phase']=='loading':
                 r['phase']='to_k'; r['rec']['dep']=r['t']; r['rec']['k']=r['t']+days(TAK); r['t']=r['t']+days(TAK)
@@ -160,8 +163,9 @@ while t<END+days(4):
             mv=min(f['cargo'],max(0,min(CAP,P['amigo_target'])-amigo))
             amigo+=mv; f['cargo']-=mv; f['rec']['amigo']+=mv
     # 2. waiting river vessels take loads
+    NOR=lambda f: f['rec']['n'] in f['amigo_only']
     for r in waiting:
-        avail=sum(f['cargo'] for f in here)
+        avail=sum(f['cargo'] for f in here if not NOR(f))
         if avail<=0: continue
         incoming=any(f['phase']=='to_aia' and f['t']-t<=days(0.5) for f in fly)
         take=min(r['cap'],avail)
@@ -169,7 +173,7 @@ while t<END+days(4):
         # don't send a river vessel off with a small part load if a Fly vessel arrives within 1.5 days
         if take<0.5*r['cap'] and any(f['phase']=='to_aia' and f['t']-t<=days(1.5) for f in fly): continue
         srcs=[]; need=take
-        for f in sorted(here,key=lambda f:f['arr']):
+        for f in sorted([f for f in here if not NOR(f)],key=lambda f:f['arr']):
             if need<=0: break
             m=min(f['cargo'],need); 
             if m<=0: continue
@@ -183,8 +187,8 @@ while t<END+days(4):
         reserve=0
         soon=any(g['phase']=='to_aia' and g['t']-t<=days(1.5) for g in fly)
         for r in riv:
-            if r['phase']=='waiting' and not (soon and f['cargo']<0.5*r['cap']): reserve+=r['cap']
-        if t<f['arr']+days(W):
+            if r['phase']=='waiting' and not (soon and f['cargo']<0.5*r['cap']) and not NOR(f): reserve+=r['cap']
+        if t<f['arr']+days(W) and not NOR(f):
             for r in due: reserve+=r['cap']
         mv=min(max(0,f['cargo']-reserve),CAP-amigo)
         if mv>0: amigo+=mv; f['cargo']-=mv; f['rec']['amigo']+=mv

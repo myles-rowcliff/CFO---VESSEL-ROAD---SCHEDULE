@@ -59,11 +59,15 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 
 - **Fly Challenger (19 Nov 2026):** one-off run. Left Aiambak 8 AM 19 Nov with 1.2 ML direct to Kiunga (3 days up, 12 h discharge, 3 days back to Aiambak, 4 days on to POM), then normal POM → Aiambak trips. In `params.json`: event `Passed Aiambak to Kiunga`, `t_ak` 3, `t_ka` 3, `dis_k` 0.5, `depart_aia` true, `since` 2026-11-18T13:00.
 - **Fly Resilience (19 Nov 2026):** alongside at Aiambak with 1.5 ML but **not discharging yet** (Amigo 1 at 1,650,000 L on the evening of 19 Nov). Myles will say when discharging starts. Until then `dis_from` in `params.json` holds an assumed start (6 AM 20 Nov); set it to the real time when told. It must start before the 22 Nov convoys or Amigo 1 runs dry.
+- **Diamond, first trip (19 Nov 2026):** discharges all 950,000 L into Amigo 1 at Aiambak on 23 Nov instead of refuelling Elimbari (`amigo_only: [1]` on Diamond in `params.json`).
+- **Elimbari one-off trip to POM (19 Nov 2026):** back at Aiambak empty about 7 AM 23 Nov, it sails to POM, loads 1.0 ML and goes straight to Kiunga (about 7 PM 4 Dec), then normal Aiambak – Kiunga runs (`pom_once` on Elimbari in `params.json`). Assumes Fly vessel sailing times and 1 day loading at POM.
 - **12 trucks filled from Amigo 1, evening 19 Nov (480,000 L)** for the 20 Nov convoys: `prefill` in `params.json`.
 
 ## Engine inputs worth knowing
 
 - `fly[].dis_from`: a vessel alongside at Aiambak (event `Standby at Aiambak`) doesn't discharge before this time.
+- `fly[].amigo_only`: voyage numbers whose CFO all goes into Amigo 1, not to river vessels.
+- `river[].pom_once`: the first time the river vessel is back at Aiambak empty before this time, it sails to POM (t_back), loads (load_pom) and goes straight to Kiunga (t_out + t_ak).
 - `prefill`: `[[time, litres]]` trucks filled from Amigo 1 ahead of their convoy; the next convoys use them first.
 - Amigo 1 daily data has two truck figures: `Filled from Amigo 1 (L)` (what leaves the tank that day, drives stock) and `Trucks sent to Kiunga (L)` (what leaves Aiambak by truck that day, including pre-filled trucks and tank-tainers). Short convoy days are judged on trucks sent.
 - River deliveries to Kiunga are spread over the 12 h discharge, except one that runs past midnight: that is counted in full on the day it finishes (Myles, 19 Nov 2026), so it isn't split across two days.

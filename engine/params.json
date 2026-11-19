@@ -67,7 +67,10 @@
    "event": "Loading at POM",
    "date": "2026-11-18T12:00:00",
    "hold": 0,
-   "dis_aia": 0.5
+   "dis_aia": 0.5,
+   "amigo_only": [
+    1
+   ]
   }
  ],
  "river": [
@@ -75,7 +78,8 @@
    "name": "Elimbari",
    "cap": 1000000,
    "event": "ETA Kiunga",
-   "date": "2026-11-20T07:00:00"
+   "date": "2026-11-20T07:00:00",
+   "pom_once": "2026-11-24T00:00:00"
   }
  ],
  "wonder": {
