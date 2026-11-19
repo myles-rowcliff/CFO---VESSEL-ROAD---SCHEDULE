@@ -64,6 +64,7 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 
 - `fly[].dis_from`: a vessel alongside at Aiambak (event `Standby at Aiambak`) doesn't discharge before this time.
 - `prefill`: `[[time, litres]]` trucks filled from Amigo 1 ahead of their convoy; the next convoys use them first.
+- Amigo 1 daily data has two truck figures: `Filled from Amigo 1 (L)` (what leaves the tank that day, drives stock) and `Trucks sent to Kiunga (L)` (what leaves Aiambak by truck that day, including pre-filled trucks and tank-tainers). Short convoy days are judged on trucks sent.
 - `extra_loads`: `[[time, litres, from_amigo]]` one-off loads such as tank-tainers.
 
 ## Style

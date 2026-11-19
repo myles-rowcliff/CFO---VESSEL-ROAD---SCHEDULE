@@ -203,7 +203,7 @@ while t<END+days(4):
             r['phase']='loading'; r['t']=t+days(LA); r['cargo']=take
             r['rec']=dict(Vessel=r['name'],at='Aiambak',frm='Amigo 1 (emergency)',ls=t,dep=None,k=None,cfo=take); emerg.append((t,r['name'],take))
     # --- trucks & site (hourly)
-    out=0
+    out=0; q0=len(truck_q)  # out = litres taken from Amigo 1; sent = litres leaving Aiambak by truck
     for a,l in PREFILL:
         if a==t: l=min(l,amigo); amigo-=l; out+=l; CREDIT+=l
     for a,l,fa in EXTRA:  # one-off loads, e.g. diesel tank-tainers (fa = filled from Amigo 1)
@@ -238,6 +238,7 @@ while t<END+days(4):
             if HOLD and amigo<need: continue  # convoy waits at Aiambak until Amigo 1 can fill every truck
             o=min(need,amigo); amigo-=o; out+=o; truck_q.append((t+dt.timedelta(hours=HRS),o+pre))
             CONVLOG.append((due,t,ch,o+pre)); LASTDEP[ch]=t; del PEND[ch]
+    sent=sum(l for a,l in truck_q[q0:])
     rin=0
     for r in riv:
         pass
@@ -248,7 +249,7 @@ while t<END+days(4):
         if q[0]<=t and q[1]>0: rin+=q[2]; q[1]-=1
     dis_q=[q for q in dis_q if q[1]>0]
     site+=arrived+rin-USE/24
-    hourly.append(dict(t=t,amigo=amigo,out=out,truck_in=arrived,river_in=rin,site=site,held=sum(f['cargo'] for f in fly if f['phase']=='at_aia')+sum(w['cargo'] for w in shs if w['phase']=='at_aia')+sum(w['cargo'] for w in ros if w['phase']=='at_aia')))
+    hourly.append(dict(t=t,amigo=amigo,out=out,sent=sent,truck_in=arrived,river_in=rin,site=site,held=sum(f['cargo'] for f in fly if f['phase']=='at_aia')+sum(w['cargo'] for w in shs if w['phase']=='at_aia')+sum(w['cargo'] for w in ros if w['phase']=='at_aia')))
     t+=H
     # river arrivals to site are handled by matching recs after the loop (added at ETA)
 
@@ -285,7 +286,7 @@ for i in range(7*P['weeks']):
     inn=max(0,close-prevc+out)
     arr=', '.join(r['Vessel'] for r in allrecs if d0<=r['eta']<d1) or None
     load=', '.join(x['Vessel'] for x in rrecs if x['at']=='Aiambak' and x['frm']!='Before schedule start' and d0<=x['ls']<d1) or None
-    daily.append([d0.strftime('%Y-%m-%d'),round(inn),round(out),round(close),round(held),arr,load])
+    daily.append([d0.strftime('%Y-%m-%d'),round(inn),round(out),round(close),round(held),arr,load,round(sum(h['sent'] for h in hs))])
     rv=sum(h.get('river_in',0) for h in hs); tr=sum(h['truck_in'] for h in hs); use=USE/24*len(hs)+((USE*max(0,(NOW-max(d0,T(P['site_measured']))).total_seconds()/86400)) if (P.get('site_measured') and d0<=NOW<d1) else 0)
     sc=hs[-1]['site'] if hs else P['site_open']; dof=sc/USE
     low=min([h['site'] for h in hs]+[sc]) if hs else sc

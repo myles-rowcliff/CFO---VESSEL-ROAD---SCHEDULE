@@ -12,8 +12,8 @@ HEAD = {
             'To Amigo 1 (L)', 'ETA Kiunga (river)', 'Lead time POM→Kiunga (days)', 'Load start POM',
             'Depart Aiambak (empty)', 'ETA POM (return)', 'Extra wait at Aiambak (h)'],
     'river': ['Vessel', 'Loaded at', 'Loaded from', 'Load start', 'Depart', 'ETA Kiunga', 'CFO (L)', 'ETA Aiambak (return)'],
-    'amigo': ['Date', 'CFO in from Fly (L)', 'Trucked out (L)', 'Closing stock (L)', 'Waiting aboard Fly vessels (L)',
-              'Fly vessels arriving', 'River vessels loading'],
+    'amigo': ['Date', 'CFO in from Fly (L)', 'Filled from Amigo 1 (L)', 'Closing stock (L)', 'Waiting aboard Fly vessels (L)',
+              'Fly vessels arriving', 'River vessels loading', 'Trucks sent to Kiunga (L)'],
     'site': ['Date', 'River arrivals (L)', 'Truck arrivals (L)', 'Site use (L)', 'Closing stock (L)', 'Days of fuel',
              'Status', 'Lowest during day (L)'],
 }
