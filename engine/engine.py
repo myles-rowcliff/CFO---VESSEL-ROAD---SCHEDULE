@@ -12,7 +12,7 @@ WS=P['wonder']
 # ---------- vessels
 fly=[]; FLYK=[]
 for v in P['fly']:
-    f=dict(name=v['name'],cap=v['cap'],cargo=0,phase=None,t=None,voy=0,rec=None,recs=[],busy=NOW,hold=v.get('hold',0),da=v.get('dis_aia',DA))
+    f=dict(name=v['name'],cap=v['cap'],cargo=0,phase=None,t=None,voy=0,rec=None,recs=[],busy=NOW,hold=v.get('hold',0),da=v.get('dis_aia',DA),dfrom=T(v.get('dis_from')))  # dis_from: alongside at Aiambak but not discharging before this time
     ev,d=v['event'],T(v['date'])
     # 'Standby at Aiambak' = alongside at Aiambak, treated as discharging there until a decision is entered
     if ev in('ETA Aiambak','Standby at Aiambak'): f.update(phase='to_aia',t=d,cargo=v['now'] or v['cap'],dep=d-days(TO),ls=d-days(TO+LP))
@@ -57,6 +57,7 @@ STEPS=[(T(a),n) for a,n in P.get('truck_steps',[])]
 TSIZE=P.get('truck_size',40000); CH=P.get('convoy_hour',6)
 PRE=[(T(a),l) for a,l in P.get('preloaded',[])]
 EXTRA=[(T(a),l,fa) for a,l,fa in P.get('extra_loads',[])]
+PREFILL=[(T(a),l) for a,l in P.get('prefill',[])]; CREDIT=0  # trucks filled from Amigo 1 ahead of their convoy: [time, litres]
 def ntrucks(t):
     n=round(RATE/TSIZE)
     for a,v in STEPS:
@@ -151,7 +152,7 @@ while t<END+days(4):
                 fa=sp.get('freight_aia',0); v['rec']['depA']=t+days(fa); v['rec']['etaP']=v['rec']['depA']+days(sp['t_pa']); v['recs'].append(v['rec'])
                 v['phase']='freight'; v['t']=t+days(fa)
     # --- Fly allocation
-    here=[f for f in fly if f['phase']=='at_aia']
+    here=[f for f in fly if f['phase']=='at_aia' and not (f['dfrom'] and t<f['dfrom'])]
     waiting=sorted([r for r in riv if r['phase']=='waiting'],key=lambda r:r['since'])
     # 1. Amigo first if low
     for f in sorted(here,key=lambda f:f['arr']):
@@ -189,7 +190,7 @@ while t<END+days(4):
         if mv>0: amigo+=mv; f['cargo']-=mv; f['rec']['amigo']+=mv
     # 4. Fly departures
     for f in here:
-        if f['cargo']<=0 and t>=f['busy'] and t>=f['arr']+days(f.get('da',DA)):
+        if f['cargo']<=0 and t>=f['busy'] and t>=f['arr']+days(f.get('da',DA)) and (f['dfrom'] is None or t>=f['dfrom']+days(f.get('da',DA))):
             f['rec']['depA']=t; f['rec']['etaP']=t+days(TB); f['recs'].append(f['rec']); f['phase']='to_pom'; f['t']=t+days(TB)
     # 5. emergency river loads from Amigo
     for r in [r for r in riv if r['phase']=='waiting']:
@@ -203,6 +204,8 @@ while t<END+days(4):
             r['rec']=dict(Vessel=r['name'],at='Aiambak',frm='Amigo 1 (emergency)',ls=t,dep=None,k=None,cfo=take); emerg.append((t,r['name'],take))
     # --- trucks & site (hourly)
     out=0
+    for a,l in PREFILL:
+        if a==t: l=min(l,amigo); amigo-=l; out+=l; CREDIT+=l
     for a,l,fa in EXTRA:  # one-off loads, e.g. diesel tank-tainers (fa = filled from Amigo 1)
         if a==t:
             if fa: l=min(l,amigo); amigo-=l; out+=l
@@ -218,8 +221,10 @@ while t<END+days(4):
             elig=[k for k in TRUCKS if k['ready']<=t and (k['home']==t.hour or k['missed'])]
             elig.sort(key=lambda k:(not k['missed']))
             for k in elig:
-                if amigo>=TSIZE:
-                    amigo-=TSIZE; out+=TSIZE; truck_q.append((t+dt.timedelta(hours=HRS),TSIZE)); k['ready']=t+dt.timedelta(hours=TURN); k['missed']=False; k['last']=t
+                if CREDIT>=TSIZE or amigo>=TSIZE:
+                    if CREDIT>=TSIZE: CREDIT-=TSIZE
+                    else: amigo-=TSIZE; out+=TSIZE
+                    truck_q.append((t+dt.timedelta(hours=HRS),TSIZE)); k['ready']=t+dt.timedelta(hours=TURN); k['missed']=False; k['last']=t
                     TRUCKLOG.append((t,k['home']))
                 else: k['missed']=True
     elif trucks_on(t):
