@@ -125,7 +125,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <section id="site" class="cfo-card cfo-page" role="tabpanel" hidden>
 <h2>Projected site stock – Tabubil</h2>
 <p class="cfo-sub">Projected closing CFO stock on site each day from the current schedule, after the day's use: river and truck arrivals at Kiunga, less 350,000 L a day of site use. The solid bar is what's left at the end of the day; the faded top is what was used. <span data-draw="siteMinLbl">Lowest closing stock</span> is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>. <span data-draw="siteNetLbl">Net change</span>: <b data-draw="siteNet">—</b> L (arrivals less site use).</p>
-<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Projected closing stock, after the day's use</span><span><i class="cfo-sw" style="background:#d2560b;opacity:.22"></i>Used that day (350,000 L)</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span><span><b style="color:#2e7d32">Net</b>&nbsp;= arrivals less site use (weekly and fortnightly views)</span></div>
+<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Projected closing stock, after the day's use</span><span><i class="cfo-sw" style="background:#d2560b;opacity:.22"></i>Used that day (350,000 L)</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span></div>
 <div class="cfo-weeknav" data-draw="siteNav"></div>
 <div class="cfo-chart" data-draw="siteChart" style="min-height:240px"></div>
 </section>
@@ -632,11 +632,6 @@ dash.draw('siteChart', (el) => {
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t) + gap / 2).attr('width', bw).attr('y', (d) => Math.min(yS(d.stock), yS(0))).attr('height', (d) => Math.abs(yS(d.stock) - yS(0))).style('fill', (d) => (d.stock < 0 ? 'var(--cds-chart-status-critical)' : d.stock < day ? OKTL[1] : OKTL[0])).style('opacity', 0.9);
   svg.append('g').selectAll('rect').data(rows.filter((d) => d.use > 0 && d.stock >= 0)).join('rect').attr('x', (d) => x(d.t) + gap / 2).attr('width', bw).attr('y', (d) => yS(d.stock + d.use)).attr('height', (d) => yS(d.stock) - yS(d.stock + d.use)).style('fill', OKTL[0]).style('opacity', 0.22);
   if (day) { svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', yS(day)).attr('y2', yS(day)).style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 3'); svg.append('text').attr('x', W - R).attr('y', yS(day) - 4).attr('text-anchor', 'end').text('1 day of site use ' + fmtL(day) + ' L'); }
-  if (rows.length <= 14 && bw >= 22) {
-    const nt = (v) => (v >= 0 ? '+' : '−') + (Math.abs(v) >= 1e6 ? (Math.abs(v) / 1e6).toFixed(2) + 'M' : Math.round(Math.abs(v) / 1e3) + 'k');
-    svg.append('g').selectAll('text').data(rows).join('text').attr('x', (d) => x(d.t) + gap / 2 + bw / 2).attr('y', (d) => yS(Math.max(0, d.stock) + d.use) - 5).attr('text-anchor', 'middle').style('font-weight', 600)
-      .style('fill', (d) => (d.rv + d.tr - d.use < 0 ? 'var(--cds-chart-status-critical)' : '#2e7d32')).style('font-size', slim ? '9.5px' : null).text((d) => (slim ? '' : 'Net ') + nt(d.rv + d.tr - d.use));
-  }
   const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t)).attr('width', bw + 1).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
     .on('pointermove', (ev, d) => tipAt(tip, el, ev, [fmtD(d.t), 'River in: ' + fmtL(d.rv) + ' L', 'Trucks in: ' + fmtL(d.tr) + ' L', 'Site use: ' + fmtL(d.use) + ' L', 'Net change: ' + (d.rv + d.tr - d.use >= 0 ? '+' : '−') + fmtL(Math.abs(d.rv + d.tr - d.use)) + ' L', 'Projected closing stock: ' + fmtL(d.stock) + ' L (' + (day ? (d.stock / day).toFixed(1) : '—') + ' days)']))
