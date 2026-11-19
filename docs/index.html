@@ -118,7 +118,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <section id="motion" class="cfo-card cfo-page" role="tabpanel" hidden>
 <h2>Time and motion</h2>
 <p class="cfo-sub">Where every vessel is over time. POM is at the bottom, Aiambak in the middle and Kiunga at the top, spaced by sailing time. Sloped lines are vessels on the move (solid laden, dashed empty); flat lines are time in port loading, discharging or waiting. Show all routes, or just POM – Aiambak or Aiambak – Kiunga; choose 2 weeks or 8 weeks, starting today; point at a line for times and litres.</p>
-<div class="cfo-legend"><span><i class="cfo-sw" data-vessel="Fly Resilience"></i>Fly Resilience</span><span><i class="cfo-sw" data-vessel="Fly Challenger"></i>Fly Challenger</span><span><i class="cfo-sw" data-vessel="Fly Warrior"></i>Fly Warrior</span><span><i class="cfo-sw" data-vessel="Fly Prosperity"></i>Fly Prosperity</span><span><i class="cfo-sw" data-vessel="Elimbari"></i>Elimbari</span><span><i class="cfo-sw" data-vessel="Diamond"></i>Diamond</span><span><i class="cfo-sw" data-vessel="Wonderland"></i>Wonderland</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:var(--color-fg)"></i>Laden</span><span><i class="cfo-swl" style="border-top-color:var(--color-fg)"></i>Empty</span></div>
+<div class="cfo-legend"><span><i class="cfo-sw" data-vessel="Fly Resilience"></i>Fly Resilience</span><span><i class="cfo-sw" data-vessel="Fly Challenger"></i>Fly Challenger</span><span><i class="cfo-sw" data-vessel="Fly Warrior"></i>Fly Warrior</span><span><i class="cfo-sw" data-vessel="Fly Prosperity"></i>Fly Prosperity</span><span><i class="cfo-sw" data-vessel="Elimbari"></i>Elimbari</span><span><i class="cfo-sw" style="background:#7fb2e5"></i>Elimbari – one-off trip via POM</span><span><i class="cfo-sw" data-vessel="Diamond"></i>Diamond</span><span><i class="cfo-sw" data-vessel="Wonderland"></i>Wonderland</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:var(--color-fg)"></i>Laden</span><span><i class="cfo-swl" style="border-top-color:var(--color-fg)"></i>Empty</span></div>
 <div class="cfo-chart" data-draw="motion" style="min-height:400px"></div>
 </section>
 
@@ -503,7 +503,8 @@ dash.draw('motion', {
     if (notReady(st.box, 'fly', 'river')) { st.lbl.textContent = ''; return; }
     const f = dash.data('fly'), r = dash.data('river');
     const LOC = {POM: 0, AIA: 4, KIU: 6.5}, NAME = {POM: 'POM', AIA: 'Aiambak', KIU: 'Kiunga'}, segs = [];
-    const seg = (v, a, la, b, lb, kind, leg, cfo) => { const s = parseT(a), e = parseT(b); if (s && e && e > s) segs.push({v, s, e, la, lb, kind, leg, cfo}); };
+    const seg = (v, a, la, b, lb, kind, leg, cfo, col) => { const s = parseT(a), e = parseT(b); if (s && e && e > s) segs.push({v, s, e, la, lb, kind, leg, cfo, col}); };
+    const VAR = '#7fb2e5';  // lighter shade: river vessel on a one-off trip via POM
     f.data.forEach((d) => {
       if (!d['ETA Aiambak']) return;
       seg(d.Vessel, d['Load start POM'], 'POM', d['Depart POM'], 'POM', 'port', 'Loading CFO at POM', d['CFO (L)']);
@@ -516,10 +517,15 @@ dash.draw('motion', {
       const toPom = /back to POM/.test(d['Loaded from'] || '');  // one-off Fly run to Kiunga: last column is ETA POM
       const ret = parseT(d['ETA Aiambak (return)']), aa = ret && toPom ? d3.timeHour.offset(ret, -96) : ret;
       const ek = parseT(d['ETA Kiunga']), depK = ek && ret ? d3.timeHour.offset(ek, 12) : null;
-      if (/one-off trip from Aiambak/.test(d['Loaded from'] || '')) seg(d.Vessel, iso(d3.timeHour.offset(parseT(d['Load start']), -96)), 'AIA', d['Load start'], 'POM', 'empty', 'Aiambak → POM (empty, one-off trip)', null);
-      seg(d.Vessel, d['Load start'], from, d.Depart, from, 'port', from === 'POM' ? 'Loading CFO at POM' : 'Loading CFO' + (d['Loaded from'] ? ' from ' + d['Loaded from'] : ''), d['CFO (L)']);
-      seg(d.Vessel, d.Depart, from, d['ETA Kiunga'], 'KIU', 'laden', NAME[from] + ' → Kiunga (laden)', d['CFO (L)']);
-      if (depK) { seg(d.Vessel, d['ETA Kiunga'], 'KIU', iso(depK), 'KIU', 'port', 'Discharging at Kiunga', d['CFO (L)']); seg(d.Vessel, iso(depK), 'KIU', iso(aa), 'AIA', 'empty', 'Kiunga → Aiambak (empty)', null); if (toPom) seg(d.Vessel, iso(aa), 'AIA', iso(ret), 'POM', 'empty', 'Aiambak → POM (empty)', null); }
+      const vc = from === 'POM' ? VAR : null;
+      if (/one-off trip from Aiambak/.test(d['Loaded from'] || '')) seg(d.Vessel, iso(d3.timeHour.offset(parseT(d['Load start']), -96)), 'AIA', d['Load start'], 'POM', 'empty', 'Aiambak → POM (empty, one-off trip)', null, VAR);
+      seg(d.Vessel, d['Load start'], from, d.Depart, from, 'port', from === 'POM' ? 'Loading CFO at POM (one-off trip)' : 'Loading CFO' + (d['Loaded from'] ? ' from ' + d['Loaded from'] : ''), d['CFO (L)'], vc);
+      if (from === 'POM') {  // passes Aiambak on the way, so the Aiambak → Kiunga view still shows the leg
+        const pa = iso(d3.timeHour.offset(parseT(d.Depart), 96));
+        seg(d.Vessel, d.Depart, 'POM', pa, 'AIA', 'laden', 'POM → Aiambak (laden, one-off trip from POM)', d['CFO (L)'], VAR);
+        seg(d.Vessel, pa, 'AIA', d['ETA Kiunga'], 'KIU', 'laden', 'Aiambak → Kiunga (laden, loaded at POM)', d['CFO (L)'], VAR);
+      } else seg(d.Vessel, d.Depart, from, d['ETA Kiunga'], 'KIU', 'laden', NAME[from] + ' → Kiunga (laden)', d['CFO (L)']);
+      if (depK) { seg(d.Vessel, d['ETA Kiunga'], 'KIU', iso(depK), 'KIU', 'port', 'Discharging at Kiunga' + (vc ? ' (loaded at POM)' : ''), d['CFO (L)'], vc); seg(d.Vessel, iso(depK), 'KIU', iso(aa), 'AIA', 'empty', 'Kiunga → Aiambak (empty)', null); if (toPom) seg(d.Vessel, iso(aa), 'AIA', iso(ret), 'POM', 'empty', 'Aiambak → POM (empty)', null); }
     });
     st.box.replaceChildren();
     if (!segs.length) { st.box.textContent = 'No voyages in the schedule'; return; }
@@ -556,7 +562,7 @@ dash.draw('motion', {
     const vis = segs.filter((s) => s.e > w0 && s.s < w1 && inView(s)), g = svg.append('g').attr('clip-path', 'url(#motion-clip)');
     const yy = (s, t) => { const a = LOC[s.la], b = LOC[s.lb]; return y(a + (b - a) * ((t - s.s) / (s.e - s.s))); };
     g.selectAll('line.s').data(vis).join('line').attr('class', 's').attr('x1', (s) => x(s.s)).attr('y1', (s) => y(LOC[s.la])).attr('x2', (s) => x(s.e)).attr('y2', (s) => y(LOC[s.lb]))
-      .style('stroke', (s) => VCOL[s.v] || 'var(--color-fg)').style('stroke-width', (s) => (s.kind === 'port' ? (big ? 4 : 5) : (big ? 1.6 : 2.5))).style('stroke-linecap', 'round').style('stroke-dasharray', (s) => (s.kind === 'empty' ? '6 4' : null)).style('opacity', (s) => (s.kind === 'port' ? 0.55 : 1));
+      .style('stroke', (s) => s.col || VCOL[s.v] || 'var(--color-fg)').style('stroke-width', (s) => (s.kind === 'port' ? (big ? 4 : 5) : (big ? 1.6 : 2.5))).style('stroke-linecap', 'round').style('stroke-dasharray', (s) => (s.kind === 'empty' ? '6 4' : null)).style('opacity', (s) => (s.kind === 'port' ? 0.55 : 1));
     const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; st.box.appendChild(tip);
     g.selectAll('line.h').data(vis).join('line').attr('class', 'h').attr('x1', (s) => x(s.s)).attr('y1', (s) => y(LOC[s.la])).attr('x2', (s) => x(s.e)).attr('y2', (s) => y(LOC[s.lb])).style('stroke', 'transparent').style('stroke-width', 14).style('cursor', 'pointer')
       .on('pointermove', (ev, s) => tipAt(tip, st.box, ev, [s.v, s.leg, fmtT(iso(s.s)) + ' → ' + fmtT(iso(s.e))].concat(s.cfo ? [fmtL(s.cfo) + ' L'] : [])))
