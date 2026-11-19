@@ -246,6 +246,8 @@ while t<END+days(4):
     rv_in=sum(rec['cfo'] for rec in rrecs if rec['k']>=t and rec['k']<t+H and rec['k']>=NOW) if False else 0
     rin=0
     for q in dis_q:
+        # a discharge that runs past midnight is counted in full when it finishes, so it isn't split across two days
+        if q[1]>1 and (q[0]+H*(q[1]-1)).date()!=q[0].date(): q[0]=q[0]+H*(q[1]-1); q[2]=q[2]*q[1]; q[1]=1
         if q[0]<=t and q[1]>0: rin+=q[2]; q[1]-=1
     dis_q=[q for q in dis_q if q[1]>0]
     site+=arrived+rin-USE/24
