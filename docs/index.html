@@ -28,7 +28,7 @@ body { margin: 0; background: var(--color-page); color: var(--color-fg); }
 .cfo-lead { margin: 0; max-width: 80ch; font-size: 16px; line-height: 1.5; }
 .cfo-lead b[data-draw="leadTxt"] { color: var(--oktl-accent); }
 .cfo-sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: 0 0 var(--cds-gap-sm); line-height: 1.45; }
-.cfo-sub b[data-draw="svaTxt"] { color: var(--oktl-accent); }
+.cfo-sub b[data-draw="svaTxt"], .cfo-sub b[data-draw="siteSvaTxt"] { color: var(--oktl-accent); }
 .cfo-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--cds-gap-md); }
 .cfo-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); }
 .cfo-tile { border-top: 3px solid var(--oktl-accent); }
@@ -126,6 +126,13 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <p class="cfo-sub">Closing CFO stock on site each day: river and truck arrivals at Kiunga, less 350,000 L a day of site use. Lowest closing stock is <b data-draw="siteMin">—</b> L on <b data-draw="siteMinDay">—</b>.</p>
 <div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Closing site stock</span><span><i class="cfo-swl"></i>One day of site use (safety line)</span></div>
 <div class="cfo-chart" data-draw="siteChart" style="min-height:240px"></div>
+</section>
+<section id="sitesva" class="cfo-card cfo-page" data-with="site" hidden>
+<h2>Scheduled vs actual – Tabubil site stock</h2>
+<p class="cfo-sub">Closing CFO stock on site at the end of each day. Scheduled is the plan locked on 19 Nov 2026, plus any vessel later sent straight from Aiambak to Kiunga; actual is the measured stock. <b data-draw="siteSvaTxt">—</b></p>
+<div class="cfo-legend"><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#5c5c5c"></i>Scheduled closing stock</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#d2560b"></i>Actual closing stock</span><span><i class="cfo-swl"></i>One day of site use</span></div>
+<div class="cfo-chart" data-draw="siteSvaChart" style="min-height:260px"></div>
+<div class="cfo-tw" style="margin-top:12px"><table class="cfo-table"><thead><tr><th>Date</th><th class="num">Scheduled stock (L)</th><th class="num">Actual stock (L)</th><th class="num">Variance (L)</th><th class="num">Actual days of use</th></tr></thead><tbody data-draw="siteSvaRows"></tbody></table></div>
 </section>
 
 <section id="amigo" class="cfo-card cfo-page" role="tabpanel" hidden>
@@ -233,7 +240,7 @@ const cfoLoad = ({answer}) => {
   const rows = keys.slice(1).map((k) => { const r = v.rows[String(k)]; const o = {}; head.forEach((h, i) => { o[h] = cv(r[i]); }); return o; }).filter((o) => o[head[0]] != null);
   return {columns: head, rows};
 };
-['fly', 'river', 'amigo', 'fleet', 'amigoset', 'site', 'sva', 'notes'].forEach((id) => dash.loader(id, {fn: cfoLoad}));
+['fly', 'river', 'amigo', 'fleet', 'amigoset', 'site', 'sva', 'notes', 'sitesva'].forEach((id) => dash.loader(id, {fn: cfoLoad}));
 
 dash.calc('kpi', {inputs: ['fly'], fn: (fly) => {
   const leads = fly.map((r) => r['Lead time POM→Kiunga (days)']).filter((x) => typeof x === 'number');
@@ -653,6 +660,53 @@ dash.draw('svaRows', (tb) => {
   });
 });
 
+
+/* Site fuel: scheduled vs actual closing stock */
+const siteSvaOf = () => {
+  const s = dash.data('sitesva'); if (s.status !== 'ok') return null;
+  const use = 350000; let last = -1;
+  const rows = s.data.map((d, i) => { const a = d['Actual closing stock (L)']; if (a != null) last = i; return {t: parseT(d.Date), sch: Number(d['Scheduled closing stock (L)']) || 0, act: a == null ? null : Number(a), use}; }).filter((d) => d.t);
+  return {rows, last};
+};
+dash.draw('siteSvaTxt', (el) => {
+  const o = siteSvaOf(); if (!o) { el.textContent = '—'; return; }
+  const r = o.rows[o.last];
+  el.textContent = r ? 'End of ' + fmtD(r.t) + ': ' + fmtL(r.act) + ' L on site against ' + fmtL(r.sch) + ' L scheduled (' + sgn(r.act - r.sch) + ' L).' : 'No actual stock entered yet.';
+});
+dash.draw('siteSvaChart', (el) => {
+  if (notReady(el, 'sitesva')) return;
+  const rows = siteSvaOf().rows; el.replaceChildren();
+  if (!rows.length) { el.textContent = 'No days in the plan'; return; }
+  const day = 350000, W = Math.max(280, el.clientWidth), H = 260, T = 14, B = 24, R = 8;
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+  const y = d3.scaleLinear().domain([0, d3.max(rows, (d) => Math.max(d.sch, d.act || 0)) * 1.05 || 1]).nice().range([H - B, T]);
+  const gy = svg.append('g').call(d3.axisLeft(y).ticks(5).tickFormat((v) => (v / 1e6).toFixed(1) + 'M'));
+  let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+  const L = Math.ceil(lw) + 10;
+  gy.attr('transform', `translate(${L},0)`); gy.select('.domain').remove(); gy.selectAll('line').attr('x2', W - L - R).style('stroke', 'var(--cds-chart-grid)');
+  const x = d3.scaleTime().domain([rows[0].t, rows[rows.length - 1].t]).range([L, W - R]);
+  const gx = svg.append('g').attr('transform', `translate(0,${H - B})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - L) / 80))).tickFormat(d3.timeFormat('%d %b')).tickSizeOuter(0));
+  gx.selectAll('path,line').style('stroke', 'var(--cds-chart-axis)');
+  svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', y(day)).attr('y2', y(day)).style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 3');
+  svg.append('path').datum(rows).attr('d', d3.line().x((d) => x(d.t)).y((d) => y(d.sch))).style('fill', 'none').style('stroke', '#5c5c5c').style('stroke-width', 2);
+  const done = rows.filter((d) => d.act != null);
+  if (done.length) { svg.append('path').datum(done).attr('d', d3.line().x((d) => x(d.t)).y((d) => y(d.act))).style('fill', 'none').style('stroke', OKTL[0]).style('stroke-width', 2.5); svg.append('g').selectAll('circle').data(done).join('circle').attr('cx', (d) => x(d.t)).attr('cy', (d) => y(d.act)).attr('r', 3.5).style('fill', OKTL[0]); }
+  const nr = rows.find((d) => +d.t === +d3.timeDay.floor(new Date()));
+  if (nr) svg.append('line').attr('x1', x(nr.t)).attr('x2', x(nr.t)).attr('y1', T).attr('y2', H - B).style('stroke', 'var(--oktl-accent)').style('stroke-dasharray', '3 3');
+  const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
+  const step = (W - L - R) / Math.max(1, rows.length - 1);
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.t) - step / 2).attr('width', step).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
+    .on('pointermove', (ev, d) => tipAt(tip, el, ev, [d3.timeFormat('%A %-d %B')(d.t), 'Scheduled: ' + fmtL(d.sch) + ' L (' + (d.sch / day).toFixed(1) + ' days)', d.act == null ? 'Actual: not entered yet' : 'Actual: ' + fmtL(d.act) + ' L (' + (d.act / day).toFixed(1) + ' days, ' + sgn(d.act - d.sch) + ' L)']))
+    .on('pointerleave', () => { tip.style.display = 'none'; });
+});
+dash.draw('siteSvaRows', (tb) => {
+  const o = siteSvaOf(); tb.replaceChildren(); if (!o) return;
+  o.rows.forEach((d) => {
+    const tr = document.createElement('tr'); if (d.act == null) tr.className = 'past';
+    tds(tr, [[fmtD(d.t)], [fmtL(d.sch), 'num'], [d.act == null ? null : fmtL(d.act), 'num'], [d.act == null ? null : sgn(d.act - d.sch), 'num'], [d.act == null ? null : (d.act / 350000).toFixed(1), 'num']]);
+    tb.appendChild(tr);
+  });
+});
 
 /* Summary: Daily / Weekly / Fortnightly / Overall */
 const SUM = {mode: 'all', off: 0};
