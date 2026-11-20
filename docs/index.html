@@ -32,7 +32,7 @@ body { margin: 0; background: var(--color-page); color: var(--color-fg); }
 .cfo-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--cds-gap-md); }
 .cfo-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); }
 .cfo-tile { border-top: 3px solid var(--oktl-accent); }
-.cfo-tile .lbl { color: var(--color-fg-muted); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+.cfo-tile .lbl { min-height: 2.6em; color: var(--color-fg-muted); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
 .cfo-tile .big { font-weight: 700; font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 10px 0 6px; }
 .cfo-tile .note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
 .cfo-chart { position: relative; min-height: 120px; }
@@ -146,7 +146,8 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 </nav>
 
 <section id="kpis" class="cfo-tiles cfo-page" role="tabpanel">
-<div class="cfo-card cfo-tile"><div class="lbl">CFO reaching Kiunga today</div><div class="big" data-draw="tKToday">—</div><div class="note">litres by river and truck, <span data-draw="tKDate">—</span></div></div>
+<div class="cfo-card cfo-tile"><div class="lbl">Scheduled CFO to Kiunga today</div><div class="big" data-draw="tKToday">—</div><div class="note">litres by river and truck in the current schedule, <span data-draw="tKDate">—</span></div></div>
+<div class="cfo-card cfo-tile"><div class="lbl">Actual CFO reaching Kiunga today</div><div class="big" data-draw="tKActual">—</div><div class="note" data-draw="tKActualNote">—</div></div>
 <div class="cfo-card cfo-tile"><div class="lbl">Kiunga / Tabubil stock today</div><div class="big" data-draw="tKStock">—</div><div class="note">litres at end of day, <span data-draw="tKDays">—</span> days of site use</div></div>
 <div class="cfo-card cfo-tile"><div class="lbl">CFO to Kiunga, next 7 days</div><div class="big" data-draw="tKWeek">—</div><div class="note">litres, against <span data-draw="tKNeed">—</span> L site need</div></div>
 </section>
@@ -348,6 +349,9 @@ put('nextRiver', () => (row0('nextup') || {}).nextRiver);
 put('nextRiverEta', () => { const r = row0('nextup'); return r && r.nextRiverEta ? fmtT(r.nextRiverEta) : null; });
 put('leadTxt', () => { const r = row0('kpi'); return r && r.avgLeadDays != null ? r.avgLeadDays.toFixed(1) : null; });
 put('tKToday', () => { const r = row0('kiunga'); return r && r.todayInL != null ? fmtL(r.todayInL) : null; });
+const actToday = () => { const s2 = dash.data('sva'); if (s2.status !== 'ok') return null; const k = d3.timeFormat('%Y-%m-%d')(new Date()); return s2.data.find((d) => d.Date === k) || null; };
+put('tKActual', () => { const r = actToday(); if (!r) return dash.data('sva').status === 'ok' ? 'Not entered' : null; const a = r['Actual by river (L)'], b = r['Actual by truck (L)']; return a == null && b == null ? 'Not entered' : fmtL((Number(a) || 0) + (Number(b) || 0)); });
+put('tKActualNote', () => { const r = actToday(); if (!r) return dash.data('sva').status === 'ok' ? 'no actual figures for today yet' : null; const a = r['Actual by river (L)'], b = r['Actual by truck (L)']; if (a == null && b == null) return 'no actual figures for today yet'; return 'litres – river ' + (a == null ? 'not entered' : fmtL(a)) + ', truck ' + (b == null ? 'not entered' : fmtL(b)) + ' (truck from convoy manifests)'; });
 put('tKDate', () => { const r = row0('kiunga'); return r ? fmtD(parseT(r.today)) : null; });
 put('tKStock', () => { const r = row0('kiunga'); return r && r.todayStockL != null ? fmtL(r.todayStockL) : null; });
 put('tKDays', () => { const r = row0('kiunga'); return r && r.todayDays != null ? r.todayDays.toFixed(1) : null; });
