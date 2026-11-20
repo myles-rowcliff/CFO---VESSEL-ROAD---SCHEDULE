@@ -91,6 +91,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 .mf-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px 28px; background: #d2560b; color: #fff; border-radius: 8px; padding: 22px 28px; }
 .mf-brand { display: flex; flex-direction: column; gap: 8px; padding-right: 24px; border-right: 1px solid rgba(255,255,255,.75); }
 .mf-brand img { width: 220px; max-width: 100%; height: auto; display: block; }
+.mf-logo-o { display: none !important; }
 .mf-brand span { font: 400 13px/1 var(--oktl-mono); color: #fff; }
 .mf-title { text-align: right; }
 .mf-title small { display: block; font: 600 13px/1 var(--oktl-mono); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 8px; }
@@ -117,6 +118,10 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
   body.mf-printing { background: #fff; }
   .mf-tbl input, .mf-strip input { border: 0 !important; padding: 0 !important; }
   .mf-head, .mf-bar, .mf-strip, .mf-tot, .mf-grand { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.mf-printing .mf-head { background: #fff !important; color: #1d1d1d !important; border: 3px solid #d2560b; }
+  body.mf-printing .mf-logo-w { display: none !important; } body.mf-printing .mf-logo-o { display: block !important; }
+  body.mf-printing .mf-brand { border-right-color: #d2560b; } body.mf-printing .mf-brand span { color: #1d1d1d; }
+  body.mf-printing .mf-title small { color: #d2560b; }
   body.mf-printing .mf-sheet { font-size: 12px; } body.mf-printing .mf-tbl td { padding: 5px 10px; }
   .mf-conv { break-inside: avoid; }
 }
@@ -856,11 +861,14 @@ const mfRedraw = () => ['mfList', 'mfEdit', 'mfSheet'].forEach((n) => dash.draw(
 const mfEl = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const mfBtn = (t, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cfo-btn' + (cls ? ' ' + cls : ''); b.textContent = t; b.addEventListener('click', fn); return b; };
 const mfEsc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
-const mfPrint = (id) => {
+const mfPrint = async (id) => {
   const prev = MF.view, prevMode = MF.mode; MF.view = id; MF.mode = 'list'; dash.draw('mfSheet');
+  await Promise.all([...document.querySelectorAll('[data-draw="mfSheet"] img')].map((im) => (im.complete && im.naturalWidth ? Promise.resolve() : new Promise((ok) => { im.onload = ok; im.onerror = ok; setTimeout(ok, 4000); }))));
   const ps = document.createElement('style'); ps.textContent = '@page { size: A4 landscape; margin: 10mm; }'; document.head.appendChild(ps);
+  const cv = MF.list.find((x) => x.id === id), oldTitle = document.title;
+  document.title = 'Fuel Convoy Manifest - ' + ((cv && cv.ref) || (cv ? d3.timeFormat('%Y-%m-%d')(parseT(cv.date)) : ''));  // browsers use the page title as the PDF file name
   document.body.classList.add('mf-printing'); window.print();
-  setTimeout(() => { document.body.classList.toggle('mf-printing', false); if (ps.parentNode) ps.parentNode.removeChild(ps); if (prevMode === 'list') { MF.view = prev; mfRedraw(); } }, 500);
+  setTimeout(() => { document.title = oldTitle; document.body.classList.toggle('mf-printing', false); if (ps.parentNode) ps.parentNode.removeChild(ps); if (prevMode === 'list') { MF.view = prev; mfRedraw(); } }, 500);
 };
 const mfStart = (c) => {
   const today = d3.timeFormat('%Y-%m-%d')(new Date());
@@ -972,7 +980,7 @@ dash.draw('mfSheet', {
     tools.append(mfBtn('Print manifest', 'pri', () => mfPrint(c.id))); if (tokGet()) tools.append(mfBtn('Edit', '', () => mfStart(c))); tools.append(mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
     el.appendChild(tools);
     const dep = mfDep(c), eta = mfEtaOf(c), l = mfLitres(c);
-    const head = H('div', 'mf-head'); head.append(H('div', 'mf-brand', '<img src="logo.png" alt="Ok Tedi Mining"><span>Aiambak · CFO convoys</span>'), H('div', 'mf-title', '<small>Aiambak → Kiunga</small><b>Northbound Convoy Manifest</b>')); el.appendChild(head);
+    const head = H('div', 'mf-head'); head.append(H('div', 'mf-brand', '<img class="mf-logo-w" src="logo.png" alt="Ok Tedi Mining"><img class="mf-logo-o" src="logo-orange.png" alt="Ok Tedi Mining"><span>Aiambak · CFO convoys</span>'), H('div', 'mf-title', '<small>Aiambak → Kiunga</small><b>Northbound Convoy Manifest</b>')); el.appendChild(head);
     el.appendChild(H('div', 'mf-strip', '<div><span>Convoy reference:</span><b>' + mfEsc(c.ref || '—') + '</b></div><div><span>Route:</span><b>AIAMBAK → KIUNGA</b></div><div><span>Departure date:</span><b>' + d3.timeFormat('%a %-d %b %Y')(dep) + '</b></div><div><span>Cargo:</span><b>DIESEL FUEL (CFO)</b></div>'));
     const box = H('div', 'mf-conv');
     box.appendChild(H('div', 'mf-bar', '<span>Departs Aiambak ' + mfT(dep) + ' | ETA Kiunga ' + mfT(eta) + (d3.timeDay.floor(eta) > d3.timeDay.floor(dep) ? ' (' + d3.timeFormat('%-d %b')(eta) + ')' : '') + '</span><span>' + c.trucks.length + ' truck' + (c.trucks.length === 1 ? '' : 's') + ' • ' + fmtL(l) + ' L</span>'));
