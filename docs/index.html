@@ -85,27 +85,28 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 .mf-h3 { font-size: 15px; font-weight: 700; margin: 14px 0 8px; }
 .mf-form { border: 1px solid var(--color-border-line); border-radius: 8px; padding: 14px 16px; margin-top: 6px; background: var(--color-page); }
 .cfo-btn.sm { padding: 6px 10px; font-size: 12px; }
-.mf-sheet { font-family: Arial, Helvetica, sans-serif; color: #111; }
-.mf-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 24px; padding: 6px 0 14px; }
-.mf-brand b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
-.mf-brand span { color: #666; font-size: 15px; }
-.mf-title { font-size: 26px; font-weight: 700; }
-.mf-strip { display: flex; flex-wrap: wrap; background: #e9e9e9; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 10px 6px; gap: 8px 0; font-size: 13px; }
-.mf-strip div { padding: 0 16px; border-left: 1px solid #c4c4c4; } .mf-strip div:first-child { border-left: 0; }
-.mf-strip span { color: #555; margin-right: 6px; } .mf-strip b { color: #111; }
-.mf-strip input { font: 700 13px Arial, Helvetica, sans-serif; border: 0; border-bottom: 1px dashed #999; background: transparent; width: 190px; padding: 1px 2px; }
-.mf-conv { margin-top: 18px; }
-.mf-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; background: #ffa000; color: #111; font-weight: 700; font-size: 14px; padding: 10px 16px; }
-.mf-tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
-.mf-tbl th { text-align: left; font-size: 12.5px; letter-spacing: .03em; text-transform: uppercase; padding: 9px 8px; border: 1px solid #d0d0d0; background: #fafafa; }
-.mf-tbl td { padding: 6px 8px; border: 1px solid #d0d0d0; vertical-align: middle; }
-.mf-tbl td.n, .mf-tbl th.n { text-align: right; font-variant-numeric: tabular-nums; }
-.mf-tbl input { font: 400 14px Arial, Helvetica, sans-serif; width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 5px 6px; background: #fff; color: #111; }
-.mf-tbl input.n { text-align: right; }
-.mf-tot { background: #e9e9e9; text-align: right; font-weight: 700; font-size: 15px; padding: 10px 16px; }
-.mf-grand { margin-top: 18px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 28px; background: #222; color: #fff; padding: 12px 16px; font-weight: 700; font-size: 16px; }
-.mf-sign { margin-top: 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px 28px; font-size: 13px; color: #444; }
-.mf-sign div { border-top: 1px solid #888; padding-top: 6px; }
+.mf-sheet { font-family: var(--oktl-sans); color: var(--color-fg); }
+.mf-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px 28px; background: #d2560b; color: #fff; border-radius: 8px; padding: 22px 28px; }
+.mf-brand { display: flex; flex-direction: column; gap: 8px; padding-right: 24px; border-right: 1px solid rgba(255,255,255,.75); }
+.mf-brand img { width: 220px; max-width: 100%; height: auto; display: block; }
+.mf-brand span { font: 400 13px/1 var(--oktl-mono); color: #fff; }
+.mf-title { text-align: right; }
+.mf-title small { display: block; font: 600 13px/1 var(--oktl-mono); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 8px; }
+.mf-title b { display: block; font-family: "Archivo", var(--oktl-sans); font-weight: 800; font-size: clamp(22px, 3vw, 34px); line-height: 1.05; letter-spacing: -.03em; }
+.mf-strip { display: flex; flex-wrap: wrap; gap: 8px 0; margin-top: 14px; padding: 12px 6px; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 8px; font-size: 13px; }
+.mf-strip div { padding: 0 16px; border-left: 1px solid var(--color-border-line); } .mf-strip div:first-child { border-left: 0; }
+.mf-strip span { color: var(--color-fg-muted); margin-right: 6px; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; } .mf-strip b { font-family: var(--oktl-mono); font-weight: 600; }
+.mf-conv { margin-top: 16px; border: 1px solid var(--color-border-line); border-radius: 8px; overflow: hidden; }
+.mf-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; background: #d2560b; color: #fff; font-weight: 700; font-size: 14px; padding: 10px 16px; }
+.mf-tbl { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.mf-tbl th { text-align: left; font-weight: 600; color: var(--color-fg-muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.mf-tbl td { padding: 7px 10px; border-bottom: 1px solid var(--color-border-line); vertical-align: middle; }
+.mf-tbl td.n, .mf-tbl th.n { text-align: right; font-family: var(--oktl-mono); }
+.mf-tbl input { font: 400 14px var(--oktl-sans); width: 100%; box-sizing: border-box; border: 1px solid var(--color-border-line); border-radius: 6px; padding: 6px 8px; background: var(--color-bg); color: var(--color-fg); }
+.mf-tbl input.n { text-align: right; font-family: var(--oktl-mono); }
+.mf-tot { background: var(--color-page); text-align: right; font-weight: 700; font-size: 15px; padding: 10px 16px; border-top: 1px solid var(--color-border-line); }
+.mf-grand { margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 28px; background: #1d1d1d; color: #fff; border-radius: 8px; padding: 12px 18px; font-weight: 700; font-size: 16px; }
+.mf-grand b { color: #f2ac11; font-family: var(--oktl-mono); }
 @media print {
   body.mf-printing .cfo > *:not(#manifest) { display: none !important; }
   body.mf-printing #manifest { display: block !important; border: 0; padding: 0; }
@@ -113,7 +114,8 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
   body.mf-printing .page { padding: 0; max-width: none; }
   body.mf-printing { background: #fff; }
   .mf-tbl input, .mf-strip input { border: 0 !important; padding: 0 !important; }
-  .mf-bar, .mf-strip, .mf-tot, .mf-grand { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .mf-head, .mf-bar, .mf-strip, .mf-tot, .mf-grand { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.mf-printing .mf-sheet { font-size: 12px; } body.mf-printing .mf-tbl td { padding: 5px 10px; }
   .mf-conv { break-inside: avoid; }
 }
 </style>
@@ -881,10 +883,10 @@ dash.draw('mfSheet', {
     if (!c) return;
     const H = mfEl;
     const tools = H('div', 'mf-ctl mf-noprint'); tools.style.marginTop = '22px';
-    tools.append(mfBtn('Print manifest', 'pri', () => { document.body.classList.add('mf-printing'); window.print(); setTimeout(() => { document.body.classList.toggle('mf-printing', false); }, 500); }), mfBtn('Edit', '', () => mfStart(c)), mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
+    tools.append(mfBtn('Print manifest', 'pri', () => { const ps = document.createElement('style'); ps.textContent = '@page { size: A4 landscape; margin: 10mm; }'; document.head.appendChild(ps); document.body.classList.add('mf-printing'); window.print(); setTimeout(() => { document.body.classList.toggle('mf-printing', false); ps.parentNode && ps.parentNode.removeChild(ps); }, 500); }), mfBtn('Edit', '', () => mfStart(c)), mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
     el.appendChild(tools);
     const dep = mfDep(c), eta = mfEtaOf(c), l = mfLitres(c);
-    const head = H('div', 'mf-head'); head.append(H('div', 'mf-brand', '<b>OKT Logistics</b><span>Aiambak Operations · CFO Convoys</span>'), H('div', 'mf-title', 'Northbound Convoy Manifest')); el.appendChild(head);
+    const head = H('div', 'mf-head'); head.append(H('div', 'mf-brand', '<img src="logo.png" alt="Ok Tedi Mining"><span>Aiambak · CFO convoys</span>'), H('div', 'mf-title', '<small>Aiambak → Kiunga</small><b>Northbound Convoy Manifest</b>')); el.appendChild(head);
     el.appendChild(H('div', 'mf-strip', '<div><span>Convoy reference:</span><b>' + mfEsc(c.ref || '—') + '</b></div><div><span>Route:</span><b>AIAMBAK → KIUNGA</b></div><div><span>Departure date:</span><b>' + d3.timeFormat('%a %-d %b %Y')(dep) + '</b></div><div><span>Cargo:</span><b>DIESEL FUEL (CFO)</b></div>'));
     const box = H('div', 'mf-conv');
     box.appendChild(H('div', 'mf-bar', '<span>Departs Aiambak ' + mfT(dep) + ' | ETA Kiunga ' + mfT(eta) + (d3.timeDay.floor(eta) > d3.timeDay.floor(dep) ? ' (' + d3.timeFormat('%-d %b')(eta) + ')' : '') + '</span><span>' + c.trucks.length + ' truck' + (c.trucks.length === 1 ? '' : 's') + ' • ' + fmtL(l) + ' L</span>'));
@@ -893,7 +895,7 @@ dash.draw('mfSheet', {
     c.trucks.forEach((r, i) => { const tr = H('tr'); [[i + 1], [r.truck || ''], [r.tanker || ''], [r.litres === '' || r.litres == null ? '' : fmtL(r.litres), 'n'], [mfT(dep)], [mfT(eta)]].forEach(([v, cls]) => { const td = H('td', cls); td.textContent = v; tr.appendChild(td); }); tb.appendChild(tr); });
     const tw = H('div', 'cfo-tw'); tw.appendChild(t); box.appendChild(tw);
     el.appendChild(box);
-    el.appendChild(H('div', 'mf-grand', '<span>Total trucks sent: ' + c.trucks.length + '</span><span>Total litres sent: ' + fmtL(l) + ' L</span>'));
+    el.appendChild(H('div', 'mf-grand', '<span>Total trucks sent: <b>' + c.trucks.length + '</b></span><span>Total litres sent: <b>' + fmtL(l) + ' L</b></span>'));
   }
 });
 
