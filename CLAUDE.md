@@ -53,7 +53,7 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 - **POM → Aiambak:** Fly Challenger, Fly Resilience, Fly Prosperity (1.5 ML each from their next loading), Fly Warrior (1.0 ML). Round trip 9 days (4 days each way + 1 day alongside at Aiambak) plus 1 day loading at POM. A Fly vessel doesn't leave Aiambak until all its CFO is off, so it waits when Amigo 1 is full.
 - **Diamond:** 950,000 L, runs POM → Aiambak like a Fly vessel (12 h discharging).
 - **Wonderland:** 700,000 L shuttle POM → Aiambak into Amigo 1 from 5 Dec 2026, 9-day cycle.
-- **Aiambak → Kiunga (river):** Elimbari (1.0 ML). Round trip 5 days (2.5 each way) plus 12 h loading at Aiambak and 12 h discharging at Kiunga. River vessels get first call on Fly/Diamond CFO at Aiambak; the rest goes into Amigo 1.
+- **Aiambak → Kiunga (river):** Elimbari (1.0 ML). Round trip 5 days (2.5 each way) plus 12 h loading at Aiambak and **7 h discharging at Kiunga** (Myles, 20 Nov 2026 – was 12 h; `dis_k` in `params.json`, `DISK_H` in `docs/index.html`). River vessels get first call on Fly/Diamond CFO at Aiambak; the rest goes into Amigo 1.
 - **Amigo 1** (storage at Aiambak): capacity 2.1 ML.
 - **Trucks:** 40,000 L each, from Amigo 1 to Kiunga, 7 h. From 20 Nov 2026, 14 trucks a day in three convoys: A 5 AM (6), B 6 AM (4), C 7 AM (4). Truck turnaround **16 h (confirmed)**. A truck that can't be fuelled waits for the next convoy.
 - **Site use:** 350,000 L a day.
@@ -63,10 +63,10 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 
 ## Decisions
 
-- **Fly Challenger (19 Nov 2026):** one-off run. Left Aiambak 8 AM 19 Nov with 1.2 ML direct to Kiunga (3 days up, 12 h discharge, 3 days back to Aiambak, 4 days on to POM), then normal POM → Aiambak trips. In `params.json`: event `Passed Aiambak to Kiunga`, `t_ak` 3, `t_ka` 3, `dis_k` 0.5, `depart_aia` true, `since` 2026-11-18T13:00.
-- **Fly Resilience (20 Nov 2026):** one-off run. Never discharged at Aiambak; left Aiambak 8:30 AM 20 Nov with 1.5 ML direct to Kiunga (same river times as Challenger: 3 days each way, 12 h discharge), then 4 days on to POM and normal trips. In `params.json`: event `Passed Aiambak to Kiunga`, `depart_aia` true, `since` 2026-11-18T14:00.
+- **Fly Challenger (19 Nov 2026):** one-off run. Left Aiambak 8 AM 19 Nov with 1.2 ML direct to Kiunga (3 days up, 7 h discharge, 3 days back to Aiambak, 4 days on to POM), then normal POM → Aiambak trips. In `params.json`: event `Passed Aiambak to Kiunga`, `t_ak` 3, `t_ka` 3, `dis_k` 7/24, `depart_aia` true, `since` 2026-11-18T13:00.
+- **Fly Resilience (20 Nov 2026):** one-off run. Never discharged at Aiambak; left Aiambak 8:30 AM 20 Nov with 1.5 ML direct to Kiunga (same river times as Challenger: 3 days each way, 7 h discharge), then 4 days on to POM and normal trips. In `params.json`: event `Passed Aiambak to Kiunga`, `depart_aia` true, `since` 2026-11-18T14:00.
 - **Diamond, first trip (19 Nov 2026):** discharges all 950,000 L into Amigo 1 at Aiambak on 23 Nov instead of refuelling Elimbari (`amigo_only: [1]` on Diamond in `params.json`).
-- **Elimbari one-off trip to POM (19 Nov 2026):** Elimbari reaches Kiunga about 3 PM 20 Nov (delayed); back at Aiambak empty about 3 PM 23 Nov, it sails to POM, loads 1.0 ML and goes straight to Kiunga (about 3 AM 5 Dec), then normal Aiambak – Kiunga runs (`pom_once` on Elimbari in `params.json`). Assumes Fly vessel sailing times and 1 day loading at POM.
+- **Elimbari one-off trip to POM (19 Nov 2026):** Elimbari arrived at Kiunga 4 PM 20 Nov (delayed); back at Aiambak empty about 11 AM 23 Nov, it sails to POM, loads 1.0 ML and goes straight to Kiunga (about midnight 4–5 Dec), then normal Aiambak – Kiunga runs (`pom_once` on Elimbari in `params.json`). Assumes Fly vessel sailing times and 1 day loading at POM.
 - **Road closed (20 Nov 2026):** no convoys on 20 Nov; assumed to reopen 6 AM 21 Nov unless Myles says otherwise (`road_closed` in `params.json`). Trucks due during a closure wait at Aiambak and go with the first convoy after.
 - **Daily truck target stays 14** (Myles, 20 Nov 2026), even with a tanker down for maintenance, unless Myles says to change it.
 - **Diamond delayed at POM (20 Nov 2026):** loading starts midday 22 Nov.
