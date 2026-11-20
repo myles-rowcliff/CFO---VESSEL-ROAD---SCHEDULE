@@ -1,7 +1,7 @@
 # Cloudflare settings for the convoy manifest save service (see README.md).
 # Secrets (GITHUB_TOKEN, PASSCODES) are NOT here – add them in the Cloudflare dashboard.
 # "name" must match the Worker's name in Cloudflare.
-name = "cfo-convoys"
+name = "cfo---vessel-road---schedule"
 main = "convoy-worker.js"
 compatibility_date = "2026-11-01"
 workers_dev = true

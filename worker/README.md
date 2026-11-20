@@ -27,7 +27,7 @@ Instead of pasting the code, Cloudflare can build the worker from this repo:
 - Worker → Settings → **Build** → **Root directory**: `worker` (so only this folder is deployed – never the repo root).
 - Deploy command: `npx wrangler deploy` (default).
 - **Build watch paths**: include `worker/*` only, so the website's own saves don't trigger rebuilds.
-- `wrangler.toml` sets the worker name (`cfo-convoys` – must match the Worker's name in Cloudflare), `ALLOWED_ORIGIN` and `REPO`.
+- `wrangler.toml` sets the worker name (`cfo---vessel-road---schedule` – must match the Worker’s name in Cloudflare), `ALLOWED_ORIGIN` and `REPO`.
 - Still add the two **secrets** (`GITHUB_TOKEN`, `PASSCODES`) in Settings → Variables and secrets.
 
 ## Day to day
