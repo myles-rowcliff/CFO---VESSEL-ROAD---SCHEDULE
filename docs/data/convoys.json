@@ -32,6 +32,24 @@
      "litres": 40000
     }
    ]
+  },
+  {
+   "id": "cmwo9eggs",
+   "date": "2026-11-20",
+   "time": "05:00",
+   "ref": "test 2",
+   "trucks": [
+    {
+     "truck": "CBP133",
+     "tanker": "TR000",
+     "litres": 40000
+    },
+    {
+     "truck": "IT24",
+     "tanker": "TR001",
+     "litres": 40000
+    }
+   ]
   }
  ]
 }
