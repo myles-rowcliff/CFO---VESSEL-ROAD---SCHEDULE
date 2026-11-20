@@ -12,6 +12,7 @@
  *   REPO            text   – owner/repo, e.g. myles-rowcliff/CFO---VESSEL-ROAD---SCHEDULE
  *
  * Nothing secret is in this file; it is safe in a public repo.
+ * Quick check once deployed: open <worker address>/data?name=convoys – it should show {"convoys": ...}.
  */
 
 const BRANCH = 'main';
