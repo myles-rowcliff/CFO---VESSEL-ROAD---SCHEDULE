@@ -80,7 +80,7 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 - `road_closed`: `[[from, to]]` times the road is closed; no convoys leave Aiambak in that window.
 - `prefill`: `[[time, litres]]` trucks filled from Amigo 1 ahead of their convoy; the next convoys use them first.
 - Amigo 1 daily data has two truck figures: `Filled from Amigo 1 (L)` (what leaves the tank that day, drives stock) and `Trucks sent to Kiunga (L)` (what leaves Aiambak by truck that day, including pre-filled trucks and tank-tainers). Short convoy days are judged on trucks sent.
-- River deliveries to Kiunga are spread over the 12 h discharge, except one that runs past midnight: that is counted in full on the day it finishes (Myles, 19 Nov 2026), so it isn't split across two days.
+- River deliveries to Kiunga are spread over the 7 h discharge, except one that runs past midnight: that is counted in full on the day it finishes (Myles, 19 Nov 2026), so it isn't split across two days.
 - `extra_loads`: `[[time, litres, from_amigo]]` one-off loads such as tank-tainers.
 
 ## Style
