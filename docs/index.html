@@ -82,6 +82,8 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 .mf-ctl .grp { display: flex; gap: 8px; align-items: flex-end; padding: 8px 10px; border: 1px solid var(--color-border-line); border-radius: 8px; }
 .mf-ctl .grp b { align-self: center; color: var(--color-fg); }
 .mf-plan { font-size: 13px; color: var(--color-fg-muted); margin: -6px 0 14px; }
+.cfo-msg { font-size: 13px; margin: 4px 0 8px; } .cfo-msg.ok { color: #2e7d32; } .cfo-msg.err { color: var(--cds-chart-status-critical); }
+.mf-tokset { font-size: 12.5px; color: var(--color-fg-muted); align-self: center; }
 .mf-h3 { font-size: 15px; font-weight: 700; margin: 14px 0 8px; }
 .mf-form { border: 1px solid var(--color-border-line); border-radius: 8px; padding: 14px 16px; margin-top: 6px; background: var(--color-page); }
 .cfo-btn.sm { padding: 6px 10px; font-size: 12px; }
@@ -203,7 +205,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <section id="manifest" class="cfo-card cfo-page" role="tabpanel" hidden>
 <div class="mf-noprint">
 <h2>Convoy manifests</h2>
-<p class="cfo-sub">Convoys you've sent are listed below. Press <b>Add convoy</b> to create a manifest: enter the departure date, time, convoy reference and number of trucks, then the truck and tanker numbers and litres loaded. Press <b>View</b> on a convoy to see its manifest, or <b>Print</b> to print it straight away. Manifests are kept only in this browser on this computer – they aren't saved to the website or shared, and clearing the browser's data removes them.</p>
+<p class="cfo-sub">Convoys you've sent are listed below. Press <b>Add convoy</b> to create a manifest: enter the departure date, time, convoy reference and number of trucks, then the truck and tanker numbers and litres loaded. Press <b>View</b> on a convoy to see its manifest, or <b>Print</b> to print it straight away. Manifests are saved to the website, so they show on any computer, and each convoy's litres count as that day's <b>actual by truck</b> on the Scheduled vs actual tab (on the day it reaches Kiunga). Anyone can view and print; adding, editing or deleting needs a GitHub token on your computer.</p>
 <div data-draw="mfList"></div>
 <div data-draw="mfEdit"></div>
 </div>
@@ -270,7 +272,7 @@ const dash = (() => {
     async start() {
       this.renderAll();
       await Promise.all(Object.keys(loaders).map(async (id) => {
-        try { const r = await fetch('data/' + id + '.json', {cache: 'no-cache'}); if (!r.ok) throw new Error(r.status); data[id] = {status: 'ok', data: loaders[id]({answer: await r.json()}).rows}; }
+        try { const r = await (window.cfoFetch ? window.cfoFetch(id) : fetch('data/' + id + '.json', {cache: 'no-cache'})); if (!r.ok) throw new Error(r.status); data[id] = {status: 'ok', data: loaders[id]({answer: await r.json()}).rows}; }
         catch (e) { data[id] = {status: 'error', error: String(e)}; }
       }));
       Object.entries(calcs).forEach(([id, c]) => {
@@ -787,10 +789,64 @@ dash.draw('svaRows', (tb) => {
 
 
 /* Convoy manifests: list of sent convoys, add/edit form and printable sheet – kept only in this browser */
-const MFKEY = 'cfoConvoys';
-const MF = {list: [], mode: 'list', cur: null, view: null};
-try { MF.list = JSON.parse(localStorage.getItem(MFKEY) || '[]') || []; } catch (e) { MF.list = []; }
-const mfStore = () => { try { localStorage.setItem(MFKEY, JSON.stringify(MF.list)); } catch (e) { alert('This browser won’t let the page save manifests (storage blocked).'); } };
+/* Saving to the website: the page writes JSON files in the repo through the GitHub API with the user's own token */
+const GH = (() => {
+  const gh = location.hostname.endsWith('.github.io'), seg = location.pathname.split('/').filter(Boolean)[0];
+  return {owner: gh ? location.hostname.split('.')[0] : 'myles-rowcliff', repo: gh && seg ? seg : 'CFO---VESSEL-ROAD---SCHEDULE', branch: 'main'};
+})();
+const TOKKEY = 'cfoGhToken';
+const tokGet = () => { try { return localStorage.getItem(TOKKEY) || ''; } catch (e) { return ''; } };
+const tokSet = (t) => { try { if (t) localStorage.setItem(TOKKEY, t); else localStorage.removeItem(TOKKEY); } catch (e) { /* storage blocked */ } };
+const ghUrl = (path) => `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${path}`;
+const b64enc = (str) => { const b = new TextEncoder().encode(str); let s2 = ''; b.forEach((c) => { s2 += String.fromCharCode(c); }); return btoa(s2); };
+const b64dec = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
+const ghGet = async (path) => { const r = await fetch(ghUrl(path) + '?ref=' + GH.branch, {headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github+json'}, cache: 'no-store'}); if (!r.ok) throw Object.assign(new Error('read ' + path + ' ' + r.status), {status: r.status}); const j = await r.json(); return {sha: j.sha, text: b64dec(j.content)}; };
+const ghPut = async (path, text, sha, msg) => { const r = await fetch(ghUrl(path), {method: 'PUT', headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github+json'}, body: JSON.stringify({message: msg, content: b64enc(text), sha, branch: GH.branch})}); if (!r.ok) throw Object.assign(new Error('save ' + path + ' ' + r.status), {status: r.status}); };
+// with a token, read the live file from GitHub so a fresh save shows straight away (the public site can lag a few minutes)
+window.cfoFetch = (id) => { if (tokGet() && id === 'sva') return fetch(ghUrl('docs/data/sva.json') + '?ref=' + GH.branch, {headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github.raw+json'}, cache: 'no-store'}).then((r) => (r.ok ? r : fetch('data/sva.json', {cache: 'no-cache'}))); return fetch('data/' + id + '.json', {cache: 'no-cache'}); };
+const ghErr = (err) => { const st = err && err.status; return st === 401 ? 'GitHub didn’t accept the token – it may have expired. Press “Forget token” and add a new one.' : st === 403 || st === 404 ? 'This token can’t save to the website. It needs Contents: read and write for this repository.' : st === 409 || st === 422 ? 'Someone else saved at the same moment – try again.' : 'Couldn’t save (' + ((err && err.message) || err) + '). Check your connection and try again.'; };
+
+const MF = {list: [], mode: 'list', cur: null, view: null, loaded: false, busy: false, msg: '', msgKind: '', tokOpen: false};
+const mfSay = (t, k) => { MF.msg = t; MF.msgKind = k || ''; dash.draw('mfList'); };
+const mfLoadList = async () => {
+  try {
+    let txt = null;
+    if (tokGet()) { try { txt = (await ghGet('docs/data/convoys.json')).text; } catch (e) { txt = null; } }
+    if (txt == null) { const r = await fetch('data/convoys.json', {cache: 'no-cache'}); txt = r.ok ? await r.text() : '{"convoys":[]}'; }
+    MF.list = (JSON.parse(txt).convoys) || [];
+  } catch (e) { MF.list = []; }
+  MF.loaded = true; mfRedraw();
+};
+const mfLocalOld = () => { try { return JSON.parse(localStorage.getItem('cfoConvoys') || '[]') || []; } catch (e) { return []; } };
+const etaKey = (c) => { const [h, m] = (c.time || '05:00').split(':').map(Number); const t = new Date(parseT(c.date)); t.setHours(h, m || 0, 0, 0); return d3.timeFormat('%Y-%m-%d')(d3.timeHour.offset(t, 7)); };
+const sumByEta = (list) => { const m = new Map(); list.forEach((c) => { const k = etaKey(c); m.set(k, (m.get(k) || 0) + c.trucks.reduce((a, t) => a + (Number(t.litres) || 0), 0)); }); return m; };
+// apply a change to the convoy list on the website, then refresh the truck actuals for the days it touches
+const mfCommit = async (change, msg) => {
+  if (!tokGet()) { mfSay('Add your GitHub token first.', 'err'); return false; }
+  MF.busy = true; mfSay('Saving to the website…');
+  try {
+    const f = await ghGet('docs/data/convoys.json'); const j = JSON.parse(f.text); const before = (j.convoys || []).slice();
+    j.convoys = change(before.slice());
+    await ghPut('docs/data/convoys.json', JSON.stringify(j, null, 1), f.sha, msg);
+    const oldS = sumByEta(before), newS = sumByEta(j.convoys);
+    const days = new Set([...oldS.keys(), ...newS.keys()].filter((k) => (oldS.get(k) || 0) !== (newS.get(k) || 0)));
+    if (days.size) {
+      const g = await ghGet('docs/data/sva.json'), sv = JSON.parse(g.text), R = sv.value.rows;
+      Object.keys(R).forEach((k) => { if (k === '1' || !days.has(R[k][0])) return; const d = R[k][0], nv = newS.get(d) || 0; if (nv > 0) R[k][4] = nv; else if (R[k][4] === (oldS.get(d) || 0)) R[k][4] = null; });
+      const out = JSON.stringify(sv);
+      await ghPut('docs/data/sva.json', out, g.sha, msg + ' – truck actuals');
+      try { const h = await ghGet('data/d_sva.json'); await ghPut('data/d_sva.json', out, h.sha, msg + ' – truck actuals (copy)'); } catch (e) { /* copy is optional */ }
+      const last = Object.keys(R).filter((k) => k !== '1' && (R[k][3] != null || R[k][4] != null)).map((k) => R[k][0]).sort().pop();
+      if (last) { try { const m = await ghGet('docs/data/meta.json'), mj = JSON.parse(m.text), nn = 'Actuals to ' + d3.timeFormat('%-d %b')(parseT(last)); if (mj.note !== nn) { mj.note = nn; await ghPut('docs/data/meta.json', JSON.stringify(mj), m.sha, msg + ' – meta'); } } catch (e) { /* optional */ } }
+      const svd = dash.data('sva');
+      if (svd.status === 'ok') svd.data.forEach((d) => { if (!days.has(d.Date)) return; const nv = newS.get(d.Date) || 0; if (nv > 0) d['Actual by truck (L)'] = nv; else if (d['Actual by truck (L)'] === (oldS.get(d.Date) || 0)) d['Actual by truck (L)'] = null; });
+    }
+    MF.list = j.convoys; MF.busy = false;
+    dash.renderAll();
+    mfSay('Saved to the website' + (days.size ? ' – truck actuals updated for ' + [...days].sort().map((d) => d3.timeFormat('%-d %b')(parseT(d))).join(', ') : '') + '. Everyone sees it in a few minutes.', 'ok');
+    return true;
+  } catch (err) { MF.busy = false; mfSay(ghErr(err), 'err'); return false; }
+};
 const mfLitres = (c) => c.trucks.reduce((a, t) => a + (Number(t.litres) || 0), 0);
 const mfDep = (c) => { const [h, m] = (c.time || '05:00').split(':').map(Number); const t = new Date(parseT(c.date)); t.setHours(h, m || 0, 0, 0); return t; };
 const mfEtaOf = (c) => d3.timeHour.offset(mfDep(c), 7);
@@ -816,9 +872,26 @@ dash.draw('mfList', {
   update: (el) => {
     el.replaceChildren();
     if (MF.mode === 'edit') return;
-    const bar = mfEl('div', 'mf-ctl'); bar.appendChild(mfBtn('+ Add convoy', 'pri', () => mfStart(null))); el.appendChild(bar);
+    const can = !!tokGet();
+    const bar = mfEl('div', 'mf-ctl');
+    if (can) {
+      const add = mfBtn('+ Add convoy', 'pri', () => mfStart(null)); add.disabled = MF.busy; bar.appendChild(add);
+      const old = mfLocalOld().filter((c) => !MF.list.some((x) => x.id === c.id));
+      if (old.length && MF.loaded) bar.appendChild(mfBtn('Move ' + old.length + ' convoy' + (old.length === 1 ? '' : 's') + ' saved in this browser to the website', '', async () => { if (await mfCommit((l) => l.concat(old), 'Convoy manifests moved from browser: ' + old.map((c) => c.ref).join(', '))) { try { localStorage.removeItem('cfoConvoys'); } catch (e) { /* ignore */ } mfRedraw(); } }));
+      const sp = mfEl('span', 'mf-tokset'); sp.textContent = 'GitHub token set on this computer'; bar.appendChild(sp);
+      bar.appendChild(mfBtn('Forget token', 'sm', () => { if (confirm('Remove the GitHub token from this computer? You won’t be able to add or edit convoys until you add it again.')) { tokSet(''); mfRedraw(); } }));
+    } else if (!MF.tokOpen) {
+      bar.appendChild(mfBtn('Add or edit convoys', '', () => { MF.tokOpen = true; mfRedraw(); }));
+    } else {
+      const lb = mfEl('span'); lb.textContent = 'GitHub token:';
+      const ti = document.createElement('input'); ti.type = 'password'; ti.placeholder = 'Paste your token (github_pat_…)'; ti.autocomplete = 'off'; ti.style.minWidth = '280px';
+      bar.append(lb, ti, mfBtn('Use token', 'pri', () => { if (ti.value.trim()) { tokSet(ti.value.trim()); MF.tokOpen = false; mfLoadList(); } }), mfBtn('Cancel', '', () => { MF.tokOpen = false; mfRedraw(); }));
+    }
+    el.appendChild(bar);
+    if (MF.msg) { const m = mfEl('p', 'cfo-msg ' + MF.msgKind); m.textContent = MF.msg; el.appendChild(m); }
     el.appendChild(mfEl('h3', 'mf-h3', 'Sent convoys'));
-    if (!MF.list.length) { el.appendChild(mfEl('p', 'cfo-sub', 'No convoys yet. Press <b>Add convoy</b> to create the first manifest.')); return; }
+    if (!MF.loaded) { el.appendChild(mfEl('p', 'cfo-sub', 'Loading…')); return; }
+    if (!MF.list.length) { el.appendChild(mfEl('p', 'cfo-sub', can ? 'No convoys yet. Press <b>Add convoy</b> to create the first manifest.' : 'No convoys yet.')); return; }
     const tw = mfEl('div', 'cfo-tw'); const t = mfEl('table', 'cfo-table', '<thead><tr><th>Departure date</th><th>Departs</th><th>Convoy reference</th><th class="num">Trucks</th><th class="num">Litres sent</th><th>ETA Kiunga</th><th></th></tr></thead>');
     const tb = mfEl('tbody'); t.appendChild(tb); tw.appendChild(t); el.appendChild(tw);
     const rows = MF.list.slice().sort((a, b) => mfDep(b) - mfDep(a));
@@ -828,7 +901,7 @@ dash.draw('mfList', {
       const l = mfLitres(c); tn += c.trucks.length; tl += l;
       [[fmtD(parseT(c.date))], [mfT(mfDep(c))], [c.ref || '—'], [c.trucks.length, 'num'], [fmtL(l), 'num'], [d3.timeFormat('%a %-d %b, %-I:%M %p')(mfEtaOf(c))]].forEach(([v, cls]) => { const td = mfEl('td', cls); td.textContent = v; tr.appendChild(td); });
       const act = mfEl('td'); act.style.whiteSpace = 'nowrap';
-      act.append(mfBtn('View', 'sm', () => { MF.view = c.id; MF.mode = 'list'; mfRedraw(); setTimeout(() => { const s2 = document.querySelector('[data-draw="mfSheet"]'); if (s2) s2.scrollIntoView({behavior: 'smooth'}); }, 50); }), ' ', mfBtn('Print', 'sm', () => mfPrint(c.id)), ' ', mfBtn('Edit', 'sm', () => mfStart(c)), ' ', mfBtn('Delete', 'sm', () => { if (!confirm('Delete convoy ' + (c.ref || '') + ' (' + fmtD(parseT(c.date)) + ')? This can’t be undone.')) return; MF.list = MF.list.filter((x) => x.id !== c.id); if (MF.view === c.id) MF.view = null; mfStore(); mfRedraw(); }));
+      act.append(mfBtn('View', 'sm', () => { MF.view = c.id; MF.mode = 'list'; mfRedraw(); setTimeout(() => { const s2 = document.querySelector('[data-draw="mfSheet"]'); if (s2) s2.scrollIntoView({behavior: 'smooth'}); }, 50); }), ' ', mfBtn('Print', 'sm', () => mfPrint(c.id))); if (can) act.append(' ', mfBtn('Edit', 'sm', () => mfStart(c)), ' ', mfBtn('Delete', 'sm', async () => { if (MF.busy || !confirm('Delete convoy ' + (c.ref || '') + ' (' + fmtD(parseT(c.date)) + ') from the website? This can’t be undone.')) return; if (await mfCommit((l) => l.filter((x) => x.id !== c.id), 'Convoy manifest deleted: ' + (c.ref || c.id))) { if (MF.view === c.id) MF.view = null; mfRedraw(); } }));
       tr.appendChild(act); tb.appendChild(tr);
     });
     const ft = mfEl('tr'); ft.innerHTML = '<td colspan="3"><b>Total (' + rows.length + ' convoy' + (rows.length === 1 ? '' : 's') + ')</b></td><td class="num"><b>' + tn + '</b></td><td class="num"><b>' + fmtL(tl) + '</b></td><td colspan="2"></td>'; tb.appendChild(ft);
@@ -876,13 +949,19 @@ dash.draw('mfEdit', {
     const sumUp = () => { tot.textContent = 'Total: ' + c.trucks.length + ' truck' + (c.trucks.length === 1 ? '' : 's') + ' · ' + fmtL(mfLitres(c)) + ' L'; };
     box.appendChild(tot); drawRows();
     const act = mfEl('div', 'mf-ctl'); act.style.marginTop = '12px'; box.appendChild(act);
-    act.append(mfBtn('Save convoy', 'pri', () => {
+    const sv = mfBtn('Save convoy', 'pri', async () => {
       if (!c.date) { alert('Enter a departure date.'); return; }
-      if (!c.id) { c.id = 'c' + Date.now().toString(36); MF.list.push(c); } else { const k = MF.list.findIndex((x) => x.id === c.id); if (k >= 0) MF.list[k] = c; else MF.list.push(c); }
-      mfStore(); MF.view = null; MF.mode = 'list'; MF.cur = null; mfRedraw();
-    }), mfBtn('Cancel', '', () => { MF.mode = 'list'; MF.cur = null; mfRedraw(); }));
+      if (MF.busy) return;
+      const isNew = !c.id; if (isNew) c.id = 'c' + Date.now().toString(36);
+      sv.disabled = true; sv.textContent = 'Saving…';
+      const ok = await mfCommit((l) => { const k = l.findIndex((x) => x.id === c.id); if (k >= 0) l[k] = c; else l.push(c); return l; }, 'Convoy manifest ' + (isNew ? 'added' : 'updated') + ': ' + (c.ref || c.id) + ' (' + d3.timeFormat('%-d %b')(parseT(c.date)) + ')');
+      if (ok) { MF.view = null; MF.mode = 'list'; MF.cur = null; mfRedraw(); }
+      else { if (isNew) c.id = null; sv.disabled = false; sv.textContent = 'Save convoy'; const m = mfEl('p', 'cfo-msg err'); m.textContent = MF.msg; box.appendChild(m); }
+    });
+    act.append(sv, mfBtn('Cancel', '', () => { MF.mode = 'list'; MF.cur = null; mfRedraw(); }));
   }
 });
+mfLoadList();
 dash.draw('mfSheet', {
   mount: () => ({}),
   update: (el) => {
@@ -891,7 +970,7 @@ dash.draw('mfSheet', {
     if (!c) return;
     const H = mfEl;
     const tools = H('div', 'mf-ctl mf-noprint'); tools.style.marginTop = '22px';
-    tools.append(mfBtn('Print manifest', 'pri', () => mfPrint(c.id)), mfBtn('Edit', '', () => mfStart(c)), mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
+    tools.append(mfBtn('Print manifest', 'pri', () => mfPrint(c.id))); if (tokGet()) tools.append(mfBtn('Edit', '', () => mfStart(c))); tools.append(mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
     el.appendChild(tools);
     const dep = mfDep(c), eta = mfEtaOf(c), l = mfLitres(c);
     const head = H('div', 'mf-head'); head.append(H('div', 'mf-brand', '<img src="logo.png" alt="Ok Tedi Mining"><span>Aiambak · CFO convoys</span>'), H('div', 'mf-title', '<small>Aiambak → Kiunga</small><b>Northbound Convoy Manifest</b>')); el.appendChild(head);
