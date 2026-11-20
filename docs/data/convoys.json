@@ -1,37 +1,3 @@
 {
- "convoys": [
-  {
-   "id": "cmwo7xxnt",
-   "date": "2026-11-20",
-   "time": "09:00",
-   "ref": "TEST",
-   "trucks": [
-    {
-     "truck": "IT011",
-     "tanker": "TR9400",
-     "litres": 40000
-    },
-    {
-     "truck": "IT24",
-     "tanker": "TR9398",
-     "litres": 40000
-    },
-    {
-     "truck": "CBP141",
-     "tanker": "T235",
-     "litres": 40000
-    },
-    {
-     "truck": "IT06",
-     "tanker": "T259",
-     "litres": 40000
-    },
-    {
-     "truck": "CBP128",
-     "tanker": "TR9431",
-     "litres": 40000
-    }
-   ]
-  }
- ]
+ "convoys": []
 }
