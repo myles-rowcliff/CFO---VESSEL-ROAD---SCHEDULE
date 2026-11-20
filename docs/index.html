@@ -804,7 +804,7 @@ const ghGet = async (path) => { const r = await fetch(ghUrl(path) + '?ref=' + GH
 const ghPut = async (path, text, sha, msg) => { const r = await fetch(ghUrl(path), {method: 'PUT', headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github+json'}, body: JSON.stringify({message: msg, content: b64enc(text), sha, branch: GH.branch})}); if (!r.ok) throw Object.assign(new Error('save ' + path + ' ' + r.status), {status: r.status}); };
 // with a token, read the live file from GitHub so a fresh save shows straight away (the public site can lag a few minutes)
 window.cfoFetch = (id) => { if (tokGet() && id === 'sva') return fetch(ghUrl('docs/data/sva.json') + '?ref=' + GH.branch, {headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github.raw+json'}, cache: 'no-store'}).then((r) => (r.ok ? r : fetch('data/sva.json', {cache: 'no-cache'}))); return fetch('data/' + id + '.json', {cache: 'no-cache'}); };
-const ghErr = (err) => { const st = err && err.status; return st === 401 ? 'GitHub didn’t accept the token – it may have expired. Press “Forget token” and add a new one.' : st === 403 || st === 404 ? 'This token can’t save to the website. It needs Contents: read and write for this repository.' : st === 409 || st === 422 ? 'Someone else saved at the same moment – try again.' : 'Couldn’t save (' + ((err && err.message) || err) + '). Check your connection and try again.'; };
+const ghErr = (err) => { const st = err && err.status; return st === 401 ? 'GitHub didn’t accept the token – it may have expired. Paste a new one in the box above and save again.' : st === 403 || st === 404 ? 'This token can’t save to the website. It needs Contents: read and write for this repository.' : st === 409 || st === 422 ? 'Someone else saved at the same moment – try again.' : 'Couldn’t save (' + ((err && err.message) || err) + '). Check your connection and try again.'; };
 
 const MF = {list: [], mode: 'list', cur: null, view: null, loaded: false, busy: false, msg: '', msgKind: '', tokOpen: false};
 const mfSay = (t, k) => { MF.msg = t; MF.msgKind = k || ''; dash.draw('mfList'); };
@@ -845,7 +845,7 @@ const mfCommit = async (change, msg) => {
     dash.renderAll();
     mfSay('Saved to the website' + (days.size ? ' – truck actuals updated for ' + [...days].sort().map((d) => d3.timeFormat('%-d %b')(parseT(d))).join(', ') : '') + '. Everyone sees it in a few minutes.', 'ok');
     return true;
-  } catch (err) { MF.busy = false; mfSay(ghErr(err), 'err'); return false; }
+  } catch (err) { MF.busy = false; if (err && err.status === 401) { tokSet(''); MF.tokOpen = true; } mfSay(ghErr(err), 'err'); return false; }
 };
 const mfLitres = (c) => c.trucks.reduce((a, t) => a + (Number(t.litres) || 0), 0);
 const mfDep = (c) => { const [h, m] = (c.time || '05:00').split(':').map(Number); const t = new Date(parseT(c.date)); t.setHours(h, m || 0, 0, 0); return t; };
@@ -879,7 +879,6 @@ dash.draw('mfList', {
       const old = mfLocalOld().filter((c) => !MF.list.some((x) => x.id === c.id));
       if (old.length && MF.loaded) bar.appendChild(mfBtn('Move ' + old.length + ' convoy' + (old.length === 1 ? '' : 's') + ' saved in this browser to the website', '', async () => { if (await mfCommit((l) => l.concat(old), 'Convoy manifests moved from browser: ' + old.map((c) => c.ref).join(', '))) { try { localStorage.removeItem('cfoConvoys'); } catch (e) { /* ignore */ } mfRedraw(); } }));
       const sp = mfEl('span', 'mf-tokset'); sp.textContent = 'GitHub token set on this computer'; bar.appendChild(sp);
-      bar.appendChild(mfBtn('Forget token', 'sm', () => { if (confirm('Remove the GitHub token from this computer? You won’t be able to add or edit convoys until you add it again.')) { tokSet(''); mfRedraw(); } }));
     } else if (!MF.tokOpen) {
       bar.appendChild(mfBtn('Add or edit convoys', '', () => { MF.tokOpen = true; mfRedraw(); }));
     } else {
