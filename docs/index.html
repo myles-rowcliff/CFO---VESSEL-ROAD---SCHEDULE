@@ -211,7 +211,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <section id="manifest" class="cfo-card cfo-page" role="tabpanel" hidden>
 <div class="mf-noprint">
 <h2>Convoy manifests</h2>
-<p class="cfo-sub">Convoys you've sent are listed below. Press <b>Add convoy</b> to create a manifest: enter the departure date, time, convoy reference and number of trucks, then the truck and tanker numbers and litres loaded. Press <b>View</b> on a convoy to see its manifest, or <b>Print</b> to print it straight away. Manifests are saved to the website, so they show on any computer, and each convoy's litres count as that day's <b>actual by truck</b> on the Scheduled vs actual tab (on the day it reaches Kiunga). Anyone can view and print; adding, editing or deleting needs a GitHub token on your computer.</p>
+<p class="cfo-sub">Convoys you've sent are listed below. Press <b>Add convoy</b> to create a manifest: enter the departure date, time, convoy reference and number of trucks, then the truck and tanker numbers and litres loaded. Press <b>View</b> on a convoy to see its manifest, or <b>Print</b> to print it straight away. Manifests are saved to the website, so they show on any computer, and each convoy's litres count as that day's <b>actual by truck</b> on the Scheduled vs actual tab (on the day it reaches Kiunga). Anyone can view and print; to add, edit or delete, press <b>Add or edit convoys</b> and enter the passcode once – this computer remembers it.</p>
 <div data-draw="mfList"></div>
 <div data-draw="mfEdit"></div>
 </div>
@@ -803,6 +803,13 @@ const GH = (() => {
   const gh = location.hostname.endsWith('.github.io'), seg = location.pathname.split('/').filter(Boolean)[0];
   return {owner: gh ? location.hostname.split('.')[0] : 'myles-rowcliff', repo: gh && seg ? seg : 'CFO---VESSEL-ROAD---SCHEDULE', branch: 'main'};
 })();
+/* Save service (Cloudflare Worker, see worker/convoy-worker.js): when set, people edit with a passcode instead of a GitHub token */
+const SAVE_URL = '';
+const PASSKEY = 'cfoPasscode';
+const passGet = () => { try { return localStorage.getItem(PASSKEY) || ''; } catch (e) { return ''; } };
+const passSet = (t) => { try { if (t) localStorage.setItem(PASSKEY, t); else localStorage.removeItem(PASSKEY); } catch (e) { /* storage blocked */ } };
+const passMode = () => !tokGet() && !!SAVE_URL && !!passGet();
+const canEdit = () => !!tokGet() || passMode();
 const TOKKEY = 'cfoGhToken';
 const tokGet = () => { try { return localStorage.getItem(TOKKEY) || ''; } catch (e) { return ''; } };
 const tokSet = (t) => { try { if (t) localStorage.setItem(TOKKEY, t); else localStorage.removeItem(TOKKEY); } catch (e) { /* storage blocked */ } };
@@ -812,7 +819,7 @@ const b64dec = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replac
 const ghGet = async (path) => { const r = await fetch(ghUrl(path) + '?ref=' + GH.branch, {headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github+json'}, cache: 'no-store'}); if (!r.ok) throw Object.assign(new Error('read ' + path + ' ' + r.status), {status: r.status}); const j = await r.json(); return {sha: j.sha, text: b64dec(j.content)}; };
 const ghPut = async (path, text, sha, msg) => { const r = await fetch(ghUrl(path), {method: 'PUT', headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github+json'}, body: JSON.stringify({message: msg, content: b64enc(text), sha, branch: GH.branch})}); if (!r.ok) throw Object.assign(new Error('save ' + path + ' ' + r.status), {status: r.status}); };
 // with a token, read the live file from GitHub so a fresh save shows straight away (the public site can lag a few minutes)
-window.cfoFetch = (id) => { if (tokGet() && id === 'sva') return fetch(ghUrl('docs/data/sva.json') + '?ref=' + GH.branch, {headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github.raw+json'}, cache: 'no-store'}).then((r) => (r.ok ? r : fetch('data/sva.json', {cache: 'no-cache'}))); return fetch('data/' + id + '.json', {cache: 'no-cache'}); };
+window.cfoFetch = (id) => { if (passMode() && id === 'sva') return fetch(SAVE_URL + '/data?name=sva', {cache: 'no-store'}).then((r) => (r.ok ? r : fetch('data/sva.json', {cache: 'no-cache'}))); if (tokGet() && id === 'sva') return fetch(ghUrl('docs/data/sva.json') + '?ref=' + GH.branch, {headers: {Authorization: 'Bearer ' + tokGet(), Accept: 'application/vnd.github.raw+json'}, cache: 'no-store'}).then((r) => (r.ok ? r : fetch('data/sva.json', {cache: 'no-cache'}))); return fetch('data/' + id + '.json', {cache: 'no-cache'}); };
 const ghErr = (err) => { const st = err && err.status; return st === 401 ? 'GitHub didn’t accept the token – it may have expired. Paste a new one in the box above and save again.' : st === 403 || st === 404 ? 'This token can’t save to the website. It needs Contents: read and write for this repository.' : st === 409 || st === 422 ? 'Someone else saved at the same moment – try again.' : 'Couldn’t save (' + ((err && err.message) || err) + '). Check your connection and try again.'; };
 
 const MF = {list: [], mode: 'list', cur: null, view: null, loaded: false, busy: false, msg: '', msgKind: '', tokOpen: false};
@@ -821,6 +828,7 @@ const mfLoadList = async () => {
   try {
     let txt = null;
     if (tokGet()) { try { txt = (await ghGet('docs/data/convoys.json')).text; } catch (e) { txt = null; } }
+    else if (passMode()) { try { const r0 = await fetch(SAVE_URL + '/data?name=convoys', {cache: 'no-store'}); txt = r0.ok ? await r0.text() : null; } catch (e) { txt = null; } }
     if (txt == null) { const r = await fetch('data/convoys.json', {cache: 'no-cache'}); txt = r.ok ? await r.text() : '{"convoys":[]}'; }
     MF.list = (JSON.parse(txt).convoys) || [];
   } catch (e) { MF.list = []; }
@@ -830,8 +838,25 @@ const mfLocalOld = () => { try { return JSON.parse(localStorage.getItem('cfoConv
 const etaKey = (c) => { const [h, m] = (c.time || '05:00').split(':').map(Number); const t = new Date(parseT(c.date)); t.setHours(h, m || 0, 0, 0); return d3.timeFormat('%Y-%m-%d')(d3.timeHour.offset(t, 7)); };
 const sumByEta = (list) => { const m = new Map(); list.forEach((c) => { const k = etaKey(c); m.set(k, (m.get(k) || 0) + c.trucks.reduce((a, t) => a + (Number(t.litres) || 0), 0)); }); return m; };
 // apply a change to the convoy list on the website, then refresh the truck actuals for the days it touches
-const mfCommit = async (change, msg) => {
-  if (!tokGet()) { mfSay('Add your GitHub token first.', 'err'); return false; }
+const mfApply = (l, a) => { if (a.action === 'upsert') { const k = l.findIndex((x) => x.id === a.convoy.id); if (k >= 0) l[k] = a.convoy; else l.push(a.convoy); return l; } if (a.action === 'delete') return l.filter((x) => x.id !== a.id); if (a.action === 'add_many') return l.concat(a.convoys.filter((c) => !l.some((x) => x.id === c.id))); return l; };
+const mfCommitPass = async (a) => {
+  MF.busy = true; mfSay('Saving to the website\u2026');
+  try {
+    const r = await fetch(SAVE_URL + '/save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(Object.assign({passcode: passGet()}, a))});
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) { passSet(''); MF.tokOpen = true; throw new Error('The passcode wasn\u2019t accepted \u2013 it may have been changed. Enter the new passcode above and save again.'); }
+    if (!r.ok || !j.ok) throw new Error('Couldn\u2019t save (' + (j.error || r.status) + '). Try again in a moment.');
+    MF.list = j.convoys || MF.list;
+    const svd = dash.data('sva'); if (svd.status === 'ok' && j.actuals) svd.data.forEach((d) => { if (d.Date in j.actuals) d['Actual by truck (L)'] = j.actuals[d.Date]; });
+    MF.busy = false; dash.renderAll();
+    mfSay('Saved to the website' + (j.days && j.days.length ? ' \u2013 truck actuals updated for ' + j.days.map((d) => d3.timeFormat('%-d %b')(parseT(d))).join(', ') : '') + '. Everyone sees it in a few minutes.', 'ok');
+    return true;
+  } catch (err) { MF.busy = false; mfSay(err.message || String(err), 'err'); return false; }
+};
+const mfCommit = async (a, msg) => {
+  if (passMode()) return mfCommitPass(a);
+  const change = (l) => mfApply(l, a);
+  if (!tokGet()) { mfSay('Unlock editing first.', 'err'); return false; }
   MF.busy = true; mfSay('Saving to the website…');
   try {
     const f = await ghGet('docs/data/convoys.json'); const j = JSON.parse(f.text); const before = (j.convoys || []).slice();
@@ -884,19 +909,31 @@ dash.draw('mfList', {
   update: (el) => {
     el.replaceChildren();
     if (MF.mode === 'edit') return;
-    const can = !!tokGet();
+    const can = canEdit();
     const bar = mfEl('div', 'mf-ctl');
     if (can) {
       const add = mfBtn('+ Add convoy', 'pri', () => mfStart(null)); add.disabled = MF.busy; bar.appendChild(add);
       const old = mfLocalOld().filter((c) => !MF.list.some((x) => x.id === c.id));
-      if (old.length && MF.loaded) bar.appendChild(mfBtn('Move ' + old.length + ' convoy' + (old.length === 1 ? '' : 's') + ' saved in this browser to the website', '', async () => { if (await mfCommit((l) => l.concat(old), 'Convoy manifests moved from browser: ' + old.map((c) => c.ref).join(', '))) { try { localStorage.removeItem('cfoConvoys'); } catch (e) { /* ignore */ } mfRedraw(); } }));
-      const sp = mfEl('span', 'mf-tokset'); sp.textContent = 'GitHub token set on this computer'; bar.appendChild(sp);
+      if (old.length && MF.loaded) bar.appendChild(mfBtn('Move ' + old.length + ' convoy' + (old.length === 1 ? '' : 's') + ' saved in this browser to the website', '', async () => { if (await mfCommit({action: 'add_many', convoys: old}, 'Convoy manifests moved from browser: ' + old.map((c) => c.ref).join(', '))) { try { localStorage.removeItem('cfoConvoys'); } catch (e) { /* ignore */ } mfRedraw(); } }));
+      const sp = mfEl('span', 'mf-tokset'); sp.textContent = tokGet() ? 'Editing unlocked on this computer (GitHub token)' : 'Editing unlocked on this computer'; bar.appendChild(sp);
     } else if (!MF.tokOpen) {
       bar.appendChild(mfBtn('Add or edit convoys', '', () => { MF.tokOpen = true; mfRedraw(); }));
+    } else if (SAVE_URL && !MF.useTok) {
+      const lb = mfEl('span'); lb.textContent = 'Passcode:';
+      const pi = document.createElement('input'); pi.type = 'password'; pi.autocomplete = 'off'; pi.style.minWidth = '200px';
+      const go = async () => {
+        const v = pi.value.trim(); if (!v) return;
+        try { const r = await fetch(SAVE_URL + '/check', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({passcode: v})}); if (!r.ok) { mfSay('That passcode isn\u2019t right.', 'err'); return; } }
+        catch (e) { mfSay('Couldn\u2019t reach the save service \u2013 check your connection.', 'err'); return; }
+        passSet(v); MF.tokOpen = false; MF.msg = ''; mfLoadList();
+      };
+      pi.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') go(); });
+      const alt = mfEl('a'); alt.href = '#manifest'; alt.textContent = 'Use a GitHub token instead'; alt.style.fontSize = '12.5px'; alt.addEventListener('click', (ev) => { ev.preventDefault(); MF.useTok = true; mfRedraw(); });
+      bar.append(lb, pi, mfBtn('Unlock', 'pri', go), mfBtn('Cancel', '', () => { MF.tokOpen = false; mfRedraw(); }), alt);
     } else {
       const lb = mfEl('span'); lb.textContent = 'GitHub token:';
       const ti = document.createElement('input'); ti.type = 'password'; ti.placeholder = 'Paste your token (github_pat_…)'; ti.autocomplete = 'off'; ti.style.minWidth = '280px';
-      bar.append(lb, ti, mfBtn('Use token', 'pri', () => { if (ti.value.trim()) { tokSet(ti.value.trim()); MF.tokOpen = false; mfLoadList(); } }), mfBtn('Cancel', '', () => { MF.tokOpen = false; mfRedraw(); }));
+      bar.append(lb, ti, mfBtn('Use token', 'pri', () => { if (ti.value.trim()) { tokSet(ti.value.trim()); MF.tokOpen = false; MF.useTok = false; mfLoadList(); } }), mfBtn('Cancel', '', () => { MF.tokOpen = false; MF.useTok = false; mfRedraw(); }));
     }
     el.appendChild(bar);
     if (MF.msg) { const m = mfEl('p', 'cfo-msg ' + MF.msgKind); m.textContent = MF.msg; el.appendChild(m); }
@@ -912,7 +949,7 @@ dash.draw('mfList', {
       const l = mfLitres(c); tn += c.trucks.length; tl += l;
       [[fmtD(parseT(c.date))], [mfT(mfDep(c))], [c.ref || '—'], [c.trucks.length, 'num'], [fmtL(l), 'num'], [d3.timeFormat('%a %-d %b, %-I:%M %p')(mfEtaOf(c))]].forEach(([v, cls]) => { const td = mfEl('td', cls); td.textContent = v; tr.appendChild(td); });
       const act = mfEl('td'); act.style.whiteSpace = 'nowrap';
-      act.append(mfBtn('View', 'sm', () => { MF.view = c.id; MF.mode = 'list'; mfRedraw(); setTimeout(() => { const s2 = document.querySelector('[data-draw="mfSheet"]'); if (s2) s2.scrollIntoView({behavior: 'smooth'}); }, 50); }), ' ', mfBtn('Print', 'sm', () => mfPrint(c.id))); if (can) act.append(' ', mfBtn('Edit', 'sm', () => mfStart(c)), ' ', mfBtn('Delete', 'sm', async () => { if (MF.busy || !confirm('Delete convoy ' + (c.ref || '') + ' (' + fmtD(parseT(c.date)) + ') from the website? This can’t be undone.')) return; if (await mfCommit((l) => l.filter((x) => x.id !== c.id), 'Convoy manifest deleted: ' + (c.ref || c.id))) { if (MF.view === c.id) MF.view = null; mfRedraw(); } }));
+      act.append(mfBtn('View', 'sm', () => { MF.view = c.id; MF.mode = 'list'; mfRedraw(); setTimeout(() => { const s2 = document.querySelector('[data-draw="mfSheet"]'); if (s2) s2.scrollIntoView({behavior: 'smooth'}); }, 50); }), ' ', mfBtn('Print', 'sm', () => mfPrint(c.id))); if (can) act.append(' ', mfBtn('Edit', 'sm', () => mfStart(c)), ' ', mfBtn('Delete', 'sm', async () => { if (MF.busy || !confirm('Delete convoy ' + (c.ref || '') + ' (' + fmtD(parseT(c.date)) + ') from the website? This can’t be undone.')) return; if (await mfCommit({action: 'delete', id: c.id}, 'Convoy manifest deleted: ' + (c.ref || c.id))) { if (MF.view === c.id) MF.view = null; mfRedraw(); } }));
       tr.appendChild(act); tb.appendChild(tr);
     });
     const ft = mfEl('tr'); ft.innerHTML = '<td colspan="3"><b>Total (' + rows.length + ' convoy' + (rows.length === 1 ? '' : 's') + ')</b></td><td class="num"><b>' + tn + '</b></td><td class="num"><b>' + fmtL(tl) + '</b></td><td colspan="2"></td>'; tb.appendChild(ft);
@@ -965,7 +1002,7 @@ dash.draw('mfEdit', {
       if (MF.busy) return;
       const isNew = !c.id; if (isNew) c.id = 'c' + Date.now().toString(36);
       sv.disabled = true; sv.textContent = 'Saving…';
-      const ok = await mfCommit((l) => { const k = l.findIndex((x) => x.id === c.id); if (k >= 0) l[k] = c; else l.push(c); return l; }, 'Convoy manifest ' + (isNew ? 'added' : 'updated') + ': ' + (c.ref || c.id) + ' (' + d3.timeFormat('%-d %b')(parseT(c.date)) + ')');
+      const ok = await mfCommit({action: 'upsert', convoy: c}, 'Convoy manifest ' + (isNew ? 'added' : 'updated') + ': ' + (c.ref || c.id) + ' (' + d3.timeFormat('%-d %b')(parseT(c.date)) + ')');
       if (ok) { MF.view = null; MF.mode = 'list'; MF.cur = null; mfRedraw(); }
       else { if (isNew) c.id = null; sv.disabled = false; sv.textContent = 'Save convoy'; const m = mfEl('p', 'cfo-msg err'); m.textContent = MF.msg; box.appendChild(m); }
     });
@@ -981,7 +1018,7 @@ dash.draw('mfSheet', {
     if (!c) return;
     const H = mfEl;
     const tools = H('div', 'mf-ctl mf-noprint'); tools.style.marginTop = '22px';
-    tools.append(mfBtn('Print manifest', 'pri', () => mfPrint(c.id))); if (tokGet()) tools.append(mfBtn('Edit', '', () => mfStart(c))); tools.append(mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
+    tools.append(mfBtn('Print manifest', 'pri', () => mfPrint(c.id))); if (canEdit()) tools.append(mfBtn('Edit', '', () => mfStart(c))); tools.append(mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
     el.appendChild(tools);
     const dep = mfDep(c), eta = mfEtaOf(c), l = mfLitres(c);
     const head = H('div', 'mf-head'); head.append(H('div', 'mf-brand', '<img class="mf-logo-w" src="logo.png" alt="Ok Tedi Mining"><img class="mf-logo-o" src="logo-orange.png" alt="Ok Tedi Mining"><span>Aiambak · CFO convoys</span>'), H('div', 'mf-title', '<small>Aiambak → Kiunga</small><b>Northbound Convoy Manifest</b>')); el.appendChild(head);

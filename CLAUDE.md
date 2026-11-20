@@ -27,6 +27,8 @@ GitHub Pages: branch `main`, folder `/docs`. The site republishes about a minute
 
 ## The website writes to `main`
 
+Editing manifests: with a GitHub token in the browser (Myles), or – once `SAVE_URL` in `docs/index.html` is set – with a **passcode** checked by the save service in `worker/convoy-worker.js` (a Cloudflare Worker holding its own token; setup in `worker/README.md`). The passcode is remembered per computer. The service only writes manifests and the truck actuals they set.
+
 The Convoy manifest tab commits to `main` (convoys.json, sva.json, d_sva.json, meta.json). **Before editing any of those files, `git fetch origin main` and merge it**, and never overwrite convoys.json or the truck actuals it sets. When publishing a branch, merge `origin/main` first if a fast-forward isn't possible. Truck actuals now come from the manifests (Myles, 20 Nov 2026); river actuals and site stock are still entered by hand.
 
 ## Updating the schedule
