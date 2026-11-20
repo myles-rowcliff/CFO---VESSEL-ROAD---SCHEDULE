@@ -804,7 +804,7 @@ const GH = (() => {
   return {owner: gh ? location.hostname.split('.')[0] : 'myles-rowcliff', repo: gh && seg ? seg : 'CFO---VESSEL-ROAD---SCHEDULE', branch: 'main'};
 })();
 /* Save service (Cloudflare Worker, see worker/convoy-worker.js): when set, people edit with a passcode instead of a GitHub token */
-const SAVE_URL = '';
+const SAVE_URL = 'https://cfo---vessel-road---schedule.myles-rowcliff.workers.dev';
 const PASSKEY = 'cfoPasscode';
 const passGet = () => { try { return localStorage.getItem(PASSKEY) || ''; } catch (e) { return ''; } };
 const passSet = (t) => { try { if (t) localStorage.setItem(PASSKEY, t); else localStorage.removeItem(PASSKEY); } catch (e) { /* storage blocked */ } };
