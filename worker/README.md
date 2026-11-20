@@ -20,6 +20,16 @@ repo for them. `convoy-worker.js` contains no secrets.
 5. **Send the worker's address** (e.g. `https://cfo-convoys.<your-name>.workers.dev`) to Claude, who puts it in
    `SAVE_URL` near the top of the manifest code in `docs/index.html`. The address isn't secret.
 
+## If Cloudflare is connected to the GitHub repo (Workers Builds)
+
+Instead of pasting the code, Cloudflare can build the worker from this repo:
+
+- Worker → Settings → **Build** → **Root directory**: `worker` (so only this folder is deployed – never the repo root).
+- Deploy command: `npx wrangler deploy` (default).
+- **Build watch paths**: include `worker/*` only, so the website's own saves don't trigger rebuilds.
+- `wrangler.toml` sets the worker name (`cfo-convoys` – must match the Worker's name in Cloudflare), `ALLOWED_ORIGIN` and `REPO`.
+- Still add the two **secrets** (`GITHUB_TOKEN`, `PASSCODES`) in Settings → Variables and secrets.
+
 ## Day to day
 
 - People press **Add or edit convoys** on the Convoy manifest tab and enter the passcode once; that computer
