@@ -146,7 +146,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <section id="timeline" class="cfo-card cfo-page" data-with="kpis">
 <h2>Vessel timeline</h2>
 <p class="cfo-sub">Show 1, 2 or 8 weeks, starting today (shaded). Use the buttons to move back or forward; point at a bar for its times and litres.</p>
-<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Laden to Aiambak</span><span><i class="cfo-sw" data-swatch="1"></i>Laden to Kiunga</span><span><i class="cfo-sw" data-swatch="2"></i>Loading CFO</span><span><i class="cfo-sw" style="background:#d2560b;opacity:.4"></i>Alongside at Aiambak</span><span><i class="cfo-sw" data-swatch="m"></i>Returning empty</span></div>
+<div class="cfo-legend"><span><i class="cfo-sw" data-swatch="0"></i>Laden to Aiambak</span><span><i class="cfo-sw" data-swatch="1"></i>Laden to Kiunga</span><span><i class="cfo-sw" data-swatch="2"></i>Loading CFO</span><span><i class="cfo-sw" style="background:#d2560b;opacity:.4"></i>Alongside at Aiambak</span><span><i class="cfo-sw" style="background:#f2ac11;opacity:.45"></i>Discharging at Kiunga (12 h)</span><span><i class="cfo-sw" data-swatch="m"></i>Returning empty</span></div>
 <div class="cfo-chart" data-draw="week" style="min-height:360px"></div>
 </section>
 <section id="kweeks" class="cfo-card cfo-page" data-with="kpis">
@@ -439,11 +439,13 @@ dash.draw('week', {
       if (/one-off trip from Aiambak/.test(d['Loaded from'] || '')) add(d.Vessel, 'empty', iso(d3.timeHour.offset(parseT(d['Load start']), -96)), d['Load start'], 'Aiambak → POM (empty, one-off trip)', '→ POM', null);
       add(d.Vessel, 'load', d['Load start'], d.Depart, (d['Loaded at'] === 'POM' ? 'Loading at POM' : 'Loading from ' + (d['Loaded from'] || '')), 'Loading', d['CFO (L)']);
       add(d.Vessel, 'ladenK', d.Depart, d['ETA Kiunga'], (d['Loaded at'] === 'POM' ? 'POM' : 'Aiambak') + ' → Kiunga', '→ Kiunga', d['CFO (L)']);
+      const dk = iso(d3.timeHour.offset(parseT(d['ETA Kiunga']), 12));  // 12 h discharging at Kiunga
+      add(d.Vessel, 'disK', d['ETA Kiunga'], dk, 'Discharging at Kiunga (12 h)', 'At Kiunga', d['CFO (L)']);
       if (/back to POM/.test(d['Loaded from'] || '')) {  // one-off Fly run to Kiunga: last column is ETA POM, Aiambak → POM is 4 days
         const aa = d3.timeHour.offset(parseT(d['ETA Aiambak (return)']), -96);
-        add(d.Vessel, 'empty', d['ETA Kiunga'], iso(aa), 'Kiunga → Aiambak (empty)', '→ Aiambak', null);
+        add(d.Vessel, 'empty', dk, iso(aa), 'Kiunga → Aiambak (empty)', '→ Aiambak', null);
         add(d.Vessel, 'empty', iso(aa), d['ETA Aiambak (return)'], 'Aiambak → POM (empty)', '→ POM', null);
-      } else add(d.Vessel, 'empty', d['ETA Kiunga'], d['ETA Aiambak (return)'], 'Kiunga → Aiambak (empty)', '→ Aiambak', null);
+      } else add(d.Vessel, 'empty', dk, d['ETA Aiambak (return)'], 'Kiunga → Aiambak (empty)', '→ Aiambak', null);
     });
     st.box.replaceChildren();
     if (!segs.length) { st.box.textContent = 'No voyages in the schedule'; return; }
@@ -473,12 +475,12 @@ dash.draw('week', {
     cols.selectAll('text.dd').data(labDays).join('text').attr('class', 'dd').attr('x', (d) => x(d) + lwid / 2).attr('y', 34).attr('text-anchor', 'middle').text((d) => d3.timeFormat(narrow ? '%-d/%-m' : '%-d %b')(d));
     svg.append('g').selectAll('line').data(days.concat([w1])).join('line').attr('x1', (d) => x(d)).attr('x2', (d) => x(d)).attr('y1', 0).attr('y2', H).style('stroke', 'var(--color-border-line)');
     svg.append('g').selectAll('line').data(d3.range(lanes.length + 1)).join('line').attr('x1', 0).attr('x2', W - R).attr('y1', (i) => hdr + i * rowH).attr('y2', (i) => hdr + i * rowH).style('stroke', 'var(--color-border-line)');
-    const col = {ladenA: OKTL[0], ladenK: OKTL[1], load: OKTL[2], along: OKTL[0], empty: 'var(--cds-chart-muted)'};
-    const ink = {ladenA: '#fff', ladenK: '#1a1a1a', load: '#fff', along: '#1a1a1a', empty: 'var(--color-fg)'};
+    const col = {ladenA: OKTL[0], ladenK: OKTL[1], load: OKTL[2], along: OKTL[0], disK: OKTL[1], empty: 'var(--cds-chart-muted)'};
+    const ink = {ladenA: '#fff', ladenK: '#1a1a1a', load: '#fff', along: '#1a1a1a', disK: '#1a1a1a', empty: 'var(--color-fg)'};
     const vis = segs.filter((s) => s.e > w0 && s.s < w1).map((s) => Object.assign({}, s, {x0: x(s.s < w0 ? w0 : s.s), x1: x(s.e > w1 ? w1 : s.e)}));
     const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; st.box.appendChild(tip);
     const g = svg.append('g').selectAll('g').data(vis).join('g');
-    g.append('rect').attr('x', (s) => s.x0 + 1).attr('width', (s) => Math.max(2, s.x1 - s.x0 - 2)).attr('y', (s) => y(s.lane) + (s.kind === 'empty' ? 13 : 7)).attr('height', (s) => (s.kind === 'empty' ? rowH - 26 : rowH - 14)).attr('rx', 4).style('fill', (s) => col[s.kind]).style('opacity', (s) => (s.kind === 'along' ? 0.4 : 1));
+    g.append('rect').attr('x', (s) => s.x0 + 1).attr('width', (s) => Math.max(2, s.x1 - s.x0 - 2)).attr('y', (s) => y(s.lane) + (s.kind === 'empty' ? 13 : 7)).attr('height', (s) => (s.kind === 'empty' ? rowH - 26 : rowH - 14)).attr('rx', 4).style('fill', (s) => col[s.kind]).style('opacity', (s) => (s.kind === 'along' || s.kind === 'disK' ? 0.45 : 1));
     g.filter((s) => s.x1 - s.x0 >= 58 && s.kind !== 'empty').append('text').attr('x', (s) => s.x0 + 7).attr('y', (s) => y(s.lane) + rowH / 2 + 4).style('fill', (s) => ink[s.kind]).style('font-size', '11px').style('font-weight', 600)
       .text((s) => s.short + (s.x1 - s.x0 >= 130 && s.e <= w1 ? ' · ' + d3.timeFormat(s.kind === 'ladenA' || s.kind === 'ladenK' ? 'arr %a %-I %p' : 'to %a %-I %p')(s.e) : ''));
     g.append('rect').attr('x', (s) => s.x0).attr('width', (s) => Math.max(4, s.x1 - s.x0)).attr('y', (s) => y(s.lane)).attr('height', rowH).style('fill', 'transparent')
