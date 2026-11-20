@@ -757,8 +757,8 @@ const sgn = (v) => (v >= 0 ? '+' : '−') + fmtL(Math.abs(v));
 dash.draw('svaTxt', (el) => {
   const o = svaRowsOf(); if (!o) { el.textContent = '—'; return; }
   const r = o.rows[o.last];
-  const pre = SV.mode === 'all' ? 'To ' : 'Selected ' + SVSTEP[SV.mode] + ', to ';
-  el.textContent = r ? pre + fmtD(r.t) + ': ' + fmtL(r.ca) + ' L delivered against ' + fmtL(r.cs) + ' L scheduled (' + sgn(r.ca - r.cs) + ' L).' : (SV.mode === 'all' ? 'No actuals entered yet.' : 'No actuals entered yet for this period.');
+  const pre = SV.mode === 'all' ? 'To date' : 'Selected ' + SVSTEP[SV.mode] + ' to date';
+  el.textContent = r ? pre + ': ' + fmtL(r.ca) + ' L delivered against ' + fmtL(r.cs) + ' L scheduled (' + sgn(r.ca - r.cs) + ' L).' : (SV.mode === 'all' ? 'No actuals entered yet.' : 'No actuals entered yet for this period.');
 });
 dash.draw('svaChart', (el) => {
   if (notReady(el, 'sva')) return;
