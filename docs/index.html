@@ -130,11 +130,11 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <p class="cfo-lead">Next CFO into Aiambak: <b data-draw="nextFly">—</b>, ETA <b data-draw="nextFlyEta">—</b>. Next arrival at Kiunga: <b data-draw="nextRiver">—</b>, ETA <b data-draw="nextRiverEta">—</b>. CFO takes <b data-draw="leadTxt">—</b> days on average from leaving POM to reaching Kiunga by river.</p>
 <nav class="cfo-tabs" role="tablist" aria-label="Pages">
 <button type="button" class="cfo-tab" role="tab" data-tab="kpis" aria-selected="true">Overview</button>
+<button type="button" class="cfo-tab" role="tab" data-tab="manifest" aria-selected="false">Convoy manifest</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="sva" aria-selected="false">Scheduled vs actual</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="motion" aria-selected="false">Time &amp; motion</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="site" aria-selected="false">Site fuel</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="amigo" aria-selected="false">Amigo 1</button>
-<button type="button" class="cfo-tab" role="tab" data-tab="manifest" aria-selected="false">Convoy manifest</button>
 <button type="button" class="cfo-tab" role="tab" data-tab="summary" aria-selected="false">Summary</button>
 </nav>
 
@@ -203,7 +203,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <section id="manifest" class="cfo-card cfo-page" role="tabpanel" hidden>
 <div class="mf-noprint">
 <h2>Convoy manifests</h2>
-<p class="cfo-sub">Convoys you've sent are listed below. Press <b>Add convoy</b> to create a manifest: enter the departure date, time, convoy reference and number of trucks, then the truck and tanker numbers and litres loaded. Open any convoy to view, edit or print its manifest. Manifests are kept only in this browser on this computer – they aren't saved to the website or shared, and clearing the browser's data removes them.</p>
+<p class="cfo-sub">Convoys you've sent are listed below. Press <b>Add convoy</b> to create a manifest: enter the departure date, time, convoy reference and number of trucks, then the truck and tanker numbers and litres loaded. Press <b>View</b> on a convoy to see its manifest, or <b>Print</b> to print it straight away. Manifests are kept only in this browser on this computer – they aren't saved to the website or shared, and clearing the browser's data removes them.</p>
 <div data-draw="mfList"></div>
 <div data-draw="mfEdit"></div>
 </div>
@@ -798,6 +798,12 @@ const mfRedraw = () => ['mfList', 'mfEdit', 'mfSheet'].forEach((n) => dash.draw(
 const mfEl = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const mfBtn = (t, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cfo-btn' + (cls ? ' ' + cls : ''); b.textContent = t; b.addEventListener('click', fn); return b; };
 const mfEsc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const mfPrint = (id) => {
+  const prev = MF.view, prevMode = MF.mode; MF.view = id; MF.mode = 'list'; dash.draw('mfSheet');
+  const ps = document.createElement('style'); ps.textContent = '@page { size: A4 landscape; margin: 10mm; }'; document.head.appendChild(ps);
+  document.body.classList.add('mf-printing'); window.print();
+  setTimeout(() => { document.body.classList.toggle('mf-printing', false); if (ps.parentNode) ps.parentNode.removeChild(ps); if (prevMode === 'list') { MF.view = prev; mfRedraw(); } }, 500);
+};
 const mfStart = (c) => {
   const today = d3.timeFormat('%Y-%m-%d')(new Date());
   MF.cur = c ? JSON.parse(JSON.stringify(c)) : {id: null, date: today, time: '05:00', ref: mfNewRef(today), trucks: Array.from({length: 6}, () => ({truck: '', tanker: '', litres: 40000}))};
@@ -820,7 +826,7 @@ dash.draw('mfList', {
       const l = mfLitres(c); tn += c.trucks.length; tl += l;
       [[fmtD(parseT(c.date))], [mfT(mfDep(c))], [c.ref || '—'], [c.trucks.length, 'num'], [fmtL(l), 'num'], [d3.timeFormat('%a %-d %b, %-I:%M %p')(mfEtaOf(c))]].forEach(([v, cls]) => { const td = mfEl('td', cls); td.textContent = v; tr.appendChild(td); });
       const act = mfEl('td'); act.style.whiteSpace = 'nowrap';
-      act.append(mfBtn('View', 'sm', () => { MF.view = c.id; MF.mode = 'list'; mfRedraw(); setTimeout(() => { const s2 = document.querySelector('[data-draw="mfSheet"]'); if (s2) s2.scrollIntoView({behavior: 'smooth'}); }, 50); }), ' ', mfBtn('Edit', 'sm', () => mfStart(c)), ' ', mfBtn('Delete', 'sm', () => { if (!confirm('Delete convoy ' + (c.ref || '') + ' (' + fmtD(parseT(c.date)) + ')? This can’t be undone.')) return; MF.list = MF.list.filter((x) => x.id !== c.id); if (MF.view === c.id) MF.view = null; mfStore(); mfRedraw(); }));
+      act.append(mfBtn('View', 'sm', () => { MF.view = c.id; MF.mode = 'list'; mfRedraw(); setTimeout(() => { const s2 = document.querySelector('[data-draw="mfSheet"]'); if (s2) s2.scrollIntoView({behavior: 'smooth'}); }, 50); }), ' ', mfBtn('Print', 'sm', () => mfPrint(c.id)), ' ', mfBtn('Edit', 'sm', () => mfStart(c)), ' ', mfBtn('Delete', 'sm', () => { if (!confirm('Delete convoy ' + (c.ref || '') + ' (' + fmtD(parseT(c.date)) + ')? This can’t be undone.')) return; MF.list = MF.list.filter((x) => x.id !== c.id); if (MF.view === c.id) MF.view = null; mfStore(); mfRedraw(); }));
       tr.appendChild(act); tb.appendChild(tr);
     });
     const ft = mfEl('tr'); ft.innerHTML = '<td colspan="3"><b>Total (' + rows.length + ' convoy' + (rows.length === 1 ? '' : 's') + ')</b></td><td class="num"><b>' + tn + '</b></td><td class="num"><b>' + fmtL(tl) + '</b></td><td colspan="2"></td>'; tb.appendChild(ft);
@@ -871,7 +877,7 @@ dash.draw('mfEdit', {
     act.append(mfBtn('Save convoy', 'pri', () => {
       if (!c.date) { alert('Enter a departure date.'); return; }
       if (!c.id) { c.id = 'c' + Date.now().toString(36); MF.list.push(c); } else { const k = MF.list.findIndex((x) => x.id === c.id); if (k >= 0) MF.list[k] = c; else MF.list.push(c); }
-      mfStore(); MF.view = c.id; MF.mode = 'list'; MF.cur = null; mfRedraw();
+      mfStore(); MF.view = null; MF.mode = 'list'; MF.cur = null; mfRedraw();
     }), mfBtn('Cancel', '', () => { MF.mode = 'list'; MF.cur = null; mfRedraw(); }));
   }
 });
@@ -883,7 +889,7 @@ dash.draw('mfSheet', {
     if (!c) return;
     const H = mfEl;
     const tools = H('div', 'mf-ctl mf-noprint'); tools.style.marginTop = '22px';
-    tools.append(mfBtn('Print manifest', 'pri', () => { const ps = document.createElement('style'); ps.textContent = '@page { size: A4 landscape; margin: 10mm; }'; document.head.appendChild(ps); document.body.classList.add('mf-printing'); window.print(); setTimeout(() => { document.body.classList.toggle('mf-printing', false); ps.parentNode && ps.parentNode.removeChild(ps); }, 500); }), mfBtn('Edit', '', () => mfStart(c)), mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
+    tools.append(mfBtn('Print manifest', 'pri', () => mfPrint(c.id)), mfBtn('Edit', '', () => mfStart(c)), mfBtn('Close', '', () => { MF.view = null; mfRedraw(); }));
     el.appendChild(tools);
     const dep = mfDep(c), eta = mfEtaOf(c), l = mfLitres(c);
     const head = H('div', 'mf-head'); head.append(H('div', 'mf-brand', '<img src="logo.png" alt="Ok Tedi Mining"><span>Aiambak · CFO convoys</span>'), H('div', 'mf-title', '<small>Aiambak → Kiunga</small><b>Northbound Convoy Manifest</b>')); el.appendChild(head);
