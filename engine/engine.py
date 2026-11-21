@@ -22,19 +22,22 @@ for v in P['fly']:
     elif ev=='Passed Aiambak to Kiunga':
         # Fly vessel sails on past Aiambak and discharges its own cargo at Kiunga, then returns empty to POM
         # optional per-vessel: t_ak / t_ka sailing days, depart_aia=True when 'date' is the departure from Aiambak, since = time it arrived at Aiambak
-        k=d+days(v.get('t_ak',TAK)); c=v['now'] or v['cap']; dk=v.get('dis_k',DK); ret=k+days(dk+v.get('t_ka',TKA)+TB)
+        k=T(v['eta_k']) if v.get('eta_k') else d+days(v.get('t_ak',TAK)); c=v['now'] or v['cap']; dk=v.get('dis_k',DK)
+        ds=T(v['dis_start']) if v.get('dis_start') else k  # dis_start: discharging starts later than arrival (waiting at Kiunga)
+        ret=ds+days(dk+v.get('t_ka',TKA)+TB)
         f.update(phase='to_pom',t=ret,cargo=0)
         if v.get('depart_aia'):
-            FLYK.append(dict(Vessel=v['name'],at='Aiambak',frm='Own cargo – direct to Kiunga, then back to POM',ls=T(v['since']) if v.get('since') else d,dep=d,k=k,cfo=c,ret=ret,dk=dk))
+            FLYK.append(dict(Vessel=v['name'],at='Aiambak',frm='Own cargo – direct to Kiunga, then back to POM',ls=T(v['since']) if v.get('since') else d,dep=d,k=k,ds=ds,cfo=c,ret=ret,dk=dk))
         else:
-            FLYK.append(dict(Vessel=v['name'],at='POM',frm='Own cargo – direct to Kiunga past Aiambak',ls=d-days(TO+LP),dep=d-days(TO),k=k,cfo=c,ret=ret,dk=dk))
+            FLYK.append(dict(Vessel=v['name'],at='POM',frm='Own cargo – direct to Kiunga past Aiambak',ls=d-days(TO+LP),dep=d-days(TO),k=k,ds=ds,cfo=c,ret=ret,dk=dk))
     fly.append(f)
 riv=[]; rrecs=[]
 for v in P['river']:
     r=dict(name=v['name'],cap=v['cap'],phase=None,t=None,cargo=0,rec=None,combo=v.get('pom_cycle',False),pom_once=T(v.get('pom_once')))  # pom_once: first time it is back at Aiambak empty before this time, it sails to POM, loads there and goes straight to Kiunga
     ev,d=v['event'],T(v['date'])
     if ev=='ETA Kiunga':
-        r.update(phase='to_k',t=d,cargo=v['cap']); r['rec']=dict(Vessel=r['name'],at='Aiambak',frm='Before schedule start',ls=d-days(TAK+LA),dep=d-days(TAK),k=d,cfo=v['cap'])
+        ds=T(v['dis_start']) if v.get('dis_start') else d  # dis_start: discharging starts later than arrival
+        r.update(phase='to_k',t=ds,cargo=v['cap']); r['rec']=dict(Vessel=r['name'],at='Aiambak',frm='Before schedule start',ls=d-days(TAK+LA),dep=d-days(TAK),k=d,ds=ds,cfo=v['cap'])
     elif ev=='Loading at POM':
         dep=d+days(LP); k=dep+days(TO+TAK)
         r.update(phase='to_k',t=k,cargo=v['cap']); r['rec']=dict(Vessel=r['name'],at='POM',frm='Johnny Traveller',ls=d,dep=dep,k=k,cfo=v['cap'])
@@ -51,7 +54,7 @@ def ros_pomtime(v):
 amigo=P['amigo_open']; site=P['site_open']-(USE*((NOW-T(P['site_measured'])).total_seconds()/86400) if P.get('site_measured') else 0); truck_q=[]; dis_q=[]  # (arrive_time, litres)
 hourly=[]; emerg=[]
 for x in FLYK:
-    if x['k']>=NOW: n=max(1,round(x['dk']*24)); dis_q.append([x['k'],n,x['cfo']/n])
+    if x['ds']>=NOW: n=max(1,round(x['dk']*24)); dis_q.append([x['ds'],n,x['cfo']/n])
 def trucks_on(t): return RESTART is None or t>=RESTART
 CLOSED=[(T(a),T(b)) for a,b in P.get('road_closed',[])]  # [[from, to]] road closed: no convoys leave Aiambak; trucks wait and go with the first convoy after
 def road_shut(t): return any(a<=t<b for a,b in CLOSED)
@@ -286,7 +289,7 @@ for r in allrecs:
     lead=round((k-r['dep']).total_seconds()/86400,2) if k else None
     wait=round(max(0,(r['depA']-r['eta']).total_seconds()/3600-(DAV.get(r['Vessel'],DA)*24 if r['Vessel']!='Wonderland' else (WS['cfo']/2+WS['freight_aia'])*24)),1) if r.get('depA') else None
     flyrows.append([r['Vessel'],r['n'],F(r['dep']),F(r['eta']),r['cfo'],', '.join(names),sum(to.values()),r['amigo'],F(k),lead,F(r['ls']),F(r.get('depA')),F(r.get('etaP')),wait])
-riverrows=[[x['Vessel'],x['at'],x['frm'],F(x['ls']),F(x['dep']),F(x['k']),x['cfo'],F(x['ret'])] for x in sorted(rrecs+FLYK+[k for v in ros for k in v['krecs']],key=lambda x:x['k']) if x['k']<=END+days(1)]
+riverrows=[[x['Vessel'],x['at'],x['frm'],F(x['ls']),F(x['dep']),F(x['k']),x['cfo'],F(x['ret']),F(x.get('ds') or x['k'])] for x in sorted(rrecs+FLYK+[k for v in ros for k in v['krecs']],key=lambda x:x['k']) if x['k']<=END+days(1)]
 # daily
 daily=[]; sitedaily=[]
 for i in range(7*P['weeks']):

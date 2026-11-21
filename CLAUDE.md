@@ -66,9 +66,11 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 - **Fly Challenger (19 Nov 2026):** one-off run. Left Aiambak 8 AM 19 Nov with 1.2 ML direct to Kiunga (3 days up, 7 h discharge, 3 days back to Aiambak, 4 days on to POM), then normal POM → Aiambak trips. In `params.json`: event `Passed Aiambak to Kiunga`, `t_ak` 3, `t_ka` 3, `dis_k` 7/24, `depart_aia` true, `since` 2026-11-18T13:00.
 - **Fly Resilience (20 Nov 2026):** one-off run. Never discharged at Aiambak; left Aiambak 8:30 AM 20 Nov with 1.5 ML direct to Kiunga (same river times as Challenger: 3 days each way, 7 h discharge), then 4 days on to POM and normal trips. In `params.json`: event `Passed Aiambak to Kiunga`, `depart_aia` true, `since` 2026-11-18T14:00.
 - **Diamond, first trip (19 Nov 2026):** discharges all 950,000 L into Amigo 1 at Aiambak on 23 Nov instead of refuelling Elimbari (`amigo_only: [1]` on Diamond in `params.json`).
-- **Elimbari one-off trip to POM (19 Nov 2026):** Elimbari arrived at Kiunga 4 PM 20 Nov (delayed); back at Aiambak empty about 11 AM 23 Nov, it sails to POM, loads 1.0 ML and goes straight to Kiunga (about midnight 4–5 Dec), then normal Aiambak – Kiunga runs (`pom_once` on Elimbari in `params.json`). Assumes Fly vessel sailing times and 1 day loading at POM.
-- **Road closed (20 Nov 2026):** no convoys on 20 Nov; assumed to reopen 6 AM 21 Nov unless Myles says otherwise (`road_closed` in `params.json`). Trucks due during a closure wait at Aiambak and go with the first convoy after.
+- **Elimbari one-off trip to POM (19 Nov 2026):** Elimbari arrived at Kiunga 4 PM 20 Nov but only started discharging 3 PM 21 Nov (`dis_start`); back at Aiambak empty about 10 AM 24 Nov, it sails to POM, loads 1.0 ML and goes straight to Kiunga (about 11 PM 5 Dec), then normal Aiambak – Kiunga runs (`pom_once` on Elimbari in `params.json`). Assumes Fly vessel sailing times and 1 day loading at POM.
+- **Road closed (20 Nov 2026):** no convoys on 20 or 21 Nov (poor road conditions); assumed to reopen 6 AM 22 Nov unless Myles says otherwise (`road_closed` in `params.json`). Trucks due during a closure wait at Aiambak and go with the first convoy after.
 - **Daily truck target stays 14** (Myles, 20 Nov 2026), even with a tanker down for maintenance, unless Myles says to change it.
+- **Fly Challenger at Kiunga (21 Nov 2026):** arrives about 6 PM 21 Nov (`eta_k`), starts discharging 1 h after Elimbari finishes, 11 PM (`dis_start`).
+- **Amigo 1 confirmed 1,170,000 L (21 Nov 2026).**
 - **Diamond delayed at POM (20 Nov 2026):** loading starts midday 22 Nov.
 - **12 trucks filled from Amigo 1, evening 19 Nov (480,000 L)** for the 20 Nov convoys: `prefill` in `params.json`.
 
@@ -77,6 +79,7 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 - `fly[].dis_from`: a vessel alongside at Aiambak (event `Standby at Aiambak`) doesn't discharge before this time.
 - `fly[].amigo_only`: voyage numbers whose CFO all goes into Amigo 1, not to river vessels.
 - `river[].pom_once`: the first time the river vessel is back at Aiambak empty before this time, it sails to POM (t_back), loads (load_pom) and goes straight to Kiunga (t_out + t_ak).
+- `dis_start` (river vessels and direct runs) / `eta_k` (direct runs): arrival at Kiunga and when discharging starts can differ (waiting at Kiunga); river data has a `Discharge start` column.
 - `road_closed`: `[[from, to]]` times the road is closed; no convoys leave Aiambak in that window.
 - `prefill`: `[[time, litres]]` trucks filled from Amigo 1 ahead of their convoy; the next convoys use them first.
 - Amigo 1 daily data has two truck figures: `Filled from Amigo 1 (L)` (what leaves the tank that day, drives stock) and `Trucks sent to Kiunga (L)` (what leaves Aiambak by truck that day, including pre-filled trucks and tank-tainers). Short convoy days are judged on trucks sent.
