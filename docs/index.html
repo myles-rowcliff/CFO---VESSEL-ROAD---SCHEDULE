@@ -166,7 +166,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 
 <section id="sva" class="cfo-card cfo-page" role="tabpanel" hidden>
 <h2>Scheduled vs actual – CFO reaching Kiunga</h2>
-<p class="cfo-sub">Scheduled is the plan locked on 19 Nov 2026, plus any vessel later sent straight from Aiambak to Kiunga (Fly Challenger, 1,200,000 L on 22 Nov; Fly Resilience, 1,500,000 L on 23 Nov); actual is what reached Kiunga. <b data-draw="svaTxt">—</b></p>
+<p class="cfo-sub">Scheduled is the current schedule – what is expected to reach Kiunga each day, updated whenever vessel times, the road or anything else changes; actual is what reached Kiunga. <b data-draw="svaTxt">—</b></p>
 <div class="cfo-legend"><span><i class="cfo-sw" style="background:#cfcfcf"></i>Scheduled (river + truck)</span><span><i class="cfo-sw" data-swatch="0"></i>Actual</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#5c5c5c"></i>Cumulative scheduled (right axis)</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#d2560b"></i>Cumulative actual</span></div>
 <div class="cfo-weeknav" data-draw="svaNav"></div>
 <div class="cfo-chart" data-draw="svaChart" style="min-height:300px"></div>
@@ -350,8 +350,11 @@ put('nextRiverEta', () => { const r = row0('nextup'); return r && r.nextRiverEta
 put('leadTxt', () => { const r = row0('kpi'); return r && r.avgLeadDays != null ? r.avgLeadDays.toFixed(1) : null; });
 const actToday = () => { const s2 = dash.data('sva'); if (s2.status !== 'ok') return null; const k = d3.timeFormat('%Y-%m-%d')(new Date()); return s2.data.find((d) => d.Date === k) || null; };
 // scheduled = same figure as the Scheduled vs actual tab (locked 19 Nov plan plus direct runs)
-put('tKToday', () => { const r = actToday(); if (!r) return dash.data('sva').status === 'ok' ? '\u2014' : null; return fmtL((Number(r['Scheduled by river (L)']) || 0) + (Number(r['Scheduled by truck (L)']) || 0)); });
-put('tKSchedNote', () => { const r = actToday(); if (!r) return null; return 'river ' + fmtL(Number(r['Scheduled by river (L)']) || 0) + ', truck ' + fmtL(Number(r['Scheduled by truck (L)']) || 0); });
+// scheduled = the current schedule (forecast), same figure as the Scheduled vs actual tab
+const fcOf = (k) => { const s2 = dash.data('site'); const r = s2.status === 'ok' ? s2.data.find((d) => d.Date === k) : null; return {ok: !!r, sr: r ? Number(r['River arrivals (L)']) || 0 : 0, st: r ? Number(r['Truck arrivals (L)']) || 0 : 0}; };
+const todayKey = () => d3.timeFormat('%Y-%m-%d')(new Date());
+put('tKToday', () => { const f = fcOf(todayKey()); if (!f.ok) return dash.data('site').status === 'ok' ? '\u2014' : null; return fmtL(f.sr + f.st); });
+put('tKSchedNote', () => { const f = fcOf(todayKey()); if (!f.ok) return null; return 'river ' + fmtL(f.sr) + ', truck ' + fmtL(f.st); });
 put('tKActual', () => { const r = actToday(); if (!r) return dash.data('sva').status === 'ok' ? 'Not entered' : null; const a = r['Actual by river (L)'], b = r['Actual by truck (L)']; return a == null && b == null ? 'Not entered' : fmtL((Number(a) || 0) + (Number(b) || 0)); });
 put('tKActualNote', () => { const r = actToday(); if (!r) return dash.data('sva').status === 'ok' ? 'no actual figures for today yet' : null; const a = r['Actual by river (L)'], b = r['Actual by truck (L)']; if (a == null && b == null) return 'no actual figures for today yet'; return 'litres – river ' + (a == null ? 'not entered' : fmtL(a)) + ', truck ' + (b == null ? 'not entered' : fmtL(b)) + ' (truck from convoy manifests)'; });
 put('tKDate', () => { const r = row0('kiunga'); return r ? fmtD(parseT(r.today)) : null; });
@@ -747,7 +750,7 @@ const svaRowsOf = () => {
   const r = svaRange();
   let cs = 0, ca = 0, last = -1;
   const rows = s.data.filter((d) => { if (!r) return true; const t = parseT(d.Date); return t && t >= r.a && t < r.b; }).map((d, i) => {
-    const sr = Number(d['Scheduled by river (L)']) || 0, st = Number(d['Scheduled by truck (L)']) || 0;
+    const fc = fcOf(d.Date), sr = fc.sr, st = fc.st;  // scheduled = current schedule
     const ar = d['Actual by river (L)'], at = d['Actual by truck (L)'];
     const has = ar != null || at != null, act = has ? (Number(ar) || 0) + (Number(at) || 0) : null;
     cs += sr + st; if (has) { ca += act; last = i; }
@@ -763,7 +766,7 @@ dash.draw('svaTxt', (el) => {
   el.textContent = r ? pre + ': ' + fmtL(r.ca) + ' L delivered against ' + fmtL(r.cs) + ' L scheduled (' + sgn(r.ca - r.cs) + ' L).' : (SV.mode === 'all' ? 'No actuals entered yet.' : 'No actuals entered yet for this period.');
 });
 dash.draw('svaChart', (el) => {
-  if (notReady(el, 'sva')) return;
+  if (notReady(el, 'sva', 'site')) return;
   const rows = svaRowsOf().rows; el.replaceChildren();
   if (!rows.length) { el.textContent = 'No days in the baseline'; return; }
   const W = Math.max(300, el.clientWidth), H = 300, T = 16, B = 26, R = 56;
@@ -1140,10 +1143,11 @@ dash.draw('sumPeriod', (el) => {
   st.push('<b>Site stock:</b> ' + (open != null ? L(open) + ' at the start, ' : '') + L(end['Closing stock (L)']) + ' at the end of ' + fmtDs(parseT(end.Date)) + ' (' + (Number(end['Days of fuel']) || 0).toFixed(1) + ' days of use). Lowest ' + L(low['Lowest during day (L)']) + ' on ' + fmtDs(parseT(low.Date)) + ' (' + ((Number(low['Lowest during day (L)']) || 0) / perDay).toFixed(1) + ' days of use).');
   const sva = dash.data('sva').data.filter((d) => inP(d.Date));
   if (sva.length) {
-    const sch = sum(sva, 'Scheduled by river (L)') + sum(sva, 'Scheduled by truck (L)');
+    const fsum = (rows) => rows.reduce((a, d) => { const f = fcOf(d.Date); return a + f.sr + f.st; }, 0);
+    const sch = fsum(sva);
     const got = sva.filter((d) => d['Actual by river (L)'] != null || d['Actual by truck (L)'] != null);
-    let t = '<b>Against the locked plan:</b> ' + L(sch) + ' scheduled to reach Kiunga.';
-    if (got.length) { const act = sum(got, 'Actual by river (L)') + sum(got, 'Actual by truck (L)'), sc2 = sum(got, 'Scheduled by river (L)') + sum(got, 'Scheduled by truck (L)'); t += ' Actuals entered for ' + got.length + ' of ' + sva.length + ' day' + (sva.length > 1 ? 's' : '') + ': ' + L(act) + ' against ' + L(sc2) + ' scheduled for those days (' + (act >= sc2 ? '+' : '−') + L(Math.abs(act - sc2)) + ').'; }
+    let t = '<b>Scheduled vs actual:</b> ' + L(sch) + ' scheduled to reach Kiunga.';
+    if (got.length) { const act = sum(got, 'Actual by river (L)') + sum(got, 'Actual by truck (L)'), sc2 = fsum(got); t += ' Actuals entered for ' + got.length + ' of ' + sva.length + ' day' + (sva.length > 1 ? 's' : '') + ': ' + L(act) + ' against ' + L(sc2) + ' scheduled for those days (' + (act >= sc2 ? '+' : '−') + L(Math.abs(act - sc2)) + ').'; }
     else t += ' No actuals entered yet.';
     st.push(t);
   }
