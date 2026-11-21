@@ -167,7 +167,7 @@ details summary { cursor: pointer; font-weight: 600; color: var(--oktl-accent); 
 <section id="sva" class="cfo-card cfo-page" role="tabpanel" hidden>
 <h2>Scheduled vs actual – CFO reaching Kiunga</h2>
 <p class="cfo-sub">Scheduled is the current schedule – what is expected to reach Kiunga each day, updated whenever vessel times, the road or anything else changes; actual is what reached Kiunga. <b data-draw="svaTxt">—</b></p>
-<div class="cfo-legend"><span><i class="cfo-sw" style="background:#cfcfcf"></i>Scheduled (river + truck)</span><span><i class="cfo-sw" data-swatch="0"></i>Actual</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#5c5c5c"></i>Cumulative scheduled (right axis)</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#d2560b"></i>Cumulative actual</span></div>
+<div class="cfo-legend"><span><i class="cfo-sw" style="background:#cfcfcf"></i>Scheduled (river + truck)</span><span><i class="cfo-sw" data-swatch="0"></i>Actual</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#5c5c5c"></i>Cumulative scheduled (right axis)</span><span><i class="cfo-swl" style="border-top-style:solid;border-top-color:#d2560b"></i>Cumulative actual</span><span><i class="cfo-swl" style="border-top-color:#2e7d32"></i>Daily target 560,000 L</span></div>
 <div class="cfo-weeknav" data-draw="svaNav"></div>
 <div class="cfo-chart" data-draw="svaChart" style="min-height:300px"></div>
 <div class="cfo-tw" style="margin-top:12px"><table class="cfo-table"><thead><tr><th>Date</th><th class="num">Scheduled (L)</th><th class="num">Actual river (L)</th><th class="num">Actual truck (L)</th><th class="num">Actual total (L)</th><th class="num">Variance (L)</th><th class="num">Running variance (L)</th></tr></thead><tbody data-draw="svaRows"></tbody></table></div>
@@ -771,7 +771,8 @@ dash.draw('svaChart', (el) => {
   if (!rows.length) { el.textContent = 'No days in the baseline'; return; }
   const W = Math.max(300, el.clientWidth), H = 300, T = 16, B = 26, R = 56;
   const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
-  const y = d3.scaleLinear().domain([0, d3.max(rows, (d) => Math.max(d.sch, d.act || 0)) * 1.12 || 1]).nice().range([H - B, T]);
+  const TARGET = 560000;  // daily target: 14 trucks × 40,000 L
+  const y = d3.scaleLinear().domain([0, Math.max(TARGET, d3.max(rows, (d) => Math.max(d.sch, d.act || 0))) * 1.12 || 1]).nice().range([H - B, T]);
   const yc = d3.scaleLinear().domain([0, d3.max(rows, (d) => Math.max(d.cs, d.ca || 0)) * 1.05 || 1]).nice().range([H - B, T]);
   const gy = svg.append('g').call(d3.axisLeft(y).ticks(5).tickFormat((v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : (v / 1e3).toFixed(0) + 'k')));
   let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
@@ -784,6 +785,8 @@ dash.draw('svaChart', (el) => {
   gx.selectAll('path,line').style('stroke', 'var(--cds-chart-axis)');
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(+d.t)).attr('width', bw).attr('y', (d) => y(d.sch)).attr('height', (d) => y(0) - y(d.sch)).style('fill', '#cfcfcf');
   svg.append('g').selectAll('rect').data(rows.filter((d) => d.act != null)).join('rect').attr('x', (d) => x(+d.t) + bw).attr('width', bw).attr('y', (d) => y(d.act)).attr('height', (d) => y(0) - y(d.act)).style('fill', OKTL[0]);
+  svg.append('line').attr('x1', L).attr('x2', W - R).attr('y1', y(TARGET)).attr('y2', y(TARGET)).style('stroke', '#2e7d32').style('stroke-width', 2).style('stroke-dasharray', '6 4');
+  svg.append('text').attr('x', L + 4).attr('y', y(TARGET) - 5).style('fill', '#2e7d32').style('font-weight', 600).text('Daily target ' + fmtL(TARGET) + ' L');
   const cx = (d) => x(+d.t) + x.bandwidth() / 2;
   svg.append('path').datum(rows).attr('d', d3.line().x(cx).y((d) => yc(d.cs))).style('fill', 'none').style('stroke', '#5c5c5c').style('stroke-width', 2);
   const done = rows.filter((d) => d.ca != null);
@@ -792,7 +795,7 @@ dash.draw('svaChart', (el) => {
   if (nr) svg.append('line').attr('x1', cx(nr)).attr('x2', cx(nr)).attr('y1', T).attr('y2', H - B).style('stroke', 'var(--oktl-accent)').style('stroke-dasharray', '3 3');
   const tip = document.createElement('div'); tip.className = 'cfo-tip'; tip.style.display = 'none'; el.appendChild(tip);
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(+d.t)).attr('width', x.step()).attr('y', T).attr('height', H - B - T).style('fill', 'transparent')
-    .on('pointermove', (ev, d) => tipAt(tip, el, ev, [d3.timeFormat('%A %-d %B')(d.t), 'Scheduled: ' + fmtL(d.sch) + ' L (river ' + fmtL(d.sr) + ', truck ' + fmtL(d.st) + ')', d.act == null ? 'Actual: not entered yet' : 'Actual: ' + fmtL(d.act) + ' L (' + sgn(d.act - d.sch) + ')', 'Cumulative scheduled: ' + fmtL(d.cs) + ' L'].concat(d.ca != null ? ['Cumulative actual: ' + fmtL(d.ca) + ' L'] : [])))
+    .on('pointermove', (ev, d) => tipAt(tip, el, ev, [d3.timeFormat('%A %-d %B')(d.t), 'Scheduled: ' + fmtL(d.sch) + ' L (river ' + fmtL(d.sr) + ', truck ' + fmtL(d.st) + ')', d.act == null ? 'Actual: not entered yet' : 'Actual: ' + fmtL(d.act) + ' L (' + sgn(d.act - d.sch) + ')', 'Daily target: 560,000 L (' + (d.act == null ? 'actual not entered' : sgn(d.act - 560000) + ' L against target') + ')', 'Cumulative scheduled: ' + fmtL(d.cs) + ' L'].concat(d.ca != null ? ['Cumulative actual: ' + fmtL(d.ca) + ' L'] : [])))
     .on('pointerleave', () => { tip.style.display = 'none'; });
 });
 dash.draw('svaRows', (tb) => {
