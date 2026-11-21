@@ -56,14 +56,14 @@
    "now": 0,
    "event": "Departed Aiambak",
    "date": "2026-11-17T12:00:00",
-   "hold": 1
+   "hold": 3
   },
   {
    "name": "Fly Warrior",
    "cap": 1000000,
    "now": 1000000,
    "event": "Loading at POM",
-   "date": "2026-11-21T12:00:00",
+   "date": "2026-11-23T12:00:00",
    "hold": 0
   },
   {

@@ -71,6 +71,7 @@ Then by hand: update `docs/data/fleet.json` (last known event per vessel), set `
 - **Daily truck target stays 14** (Myles, 20 Nov 2026), even with a tanker down for maintenance, unless Myles says to change it.
 - **Fly Challenger at Kiunga (21 Nov 2026):** arrives about 6 PM 21 Nov (`eta_k`), starts discharging 1 h after Elimbari finishes, 11 PM (`dis_start`).
 - **Amigo 1 confirmed 1,170,000 L (21 Nov 2026).**
+- **Fly Warrior and Fly Prosperity delayed 2 days at POM (21 Nov 2026):** Warrior loads from midday 23 Nov (`date`), Prosperity from midday 24 Nov (`hold` 3).
 - **Diamond delayed at POM (20 Nov 2026):** loading starts midday 22 Nov.
 - **12 trucks filled from Amigo 1, evening 19 Nov (480,000 L)** for the 20 Nov convoys: `prefill` in `params.json`.
 
